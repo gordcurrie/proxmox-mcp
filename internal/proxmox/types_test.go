@@ -31,7 +31,6 @@ func TestAPIError_Error(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
 			if got := tc.err.Error(); got != tc.want {
 				t.Errorf("got %q, want %q", got, tc.want)
 			}
@@ -62,7 +61,6 @@ func TestItoa(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.want, func(t *testing.T) {
-			t.Parallel()
 			if got := itoa(tc.n); got != tc.want {
 				t.Errorf("itoa(%d) = %q, want %q", tc.n, got, tc.want)
 			}
