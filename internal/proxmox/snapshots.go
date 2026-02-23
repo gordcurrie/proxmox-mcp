@@ -3,6 +3,7 @@ package proxmox
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strconv"
 )
 
@@ -31,7 +32,7 @@ func (c *Client) CreateVMSnapshot(ctx context.Context, node string, vmid int, re
 // It returns the UPID of the asynchronous task.
 func (c *Client) RollbackVMSnapshot(ctx context.Context, node string, vmid int, snapname string) (string, error) {
 	var upid string
-	path := "/nodes/" + node + "/qemu/" + strconv.Itoa(vmid) + "/snapshot/" + snapname + "/rollback"
+	path := "/nodes/" + node + "/qemu/" + strconv.Itoa(vmid) + "/snapshot/" + url.PathEscape(snapname) + "/rollback"
 	if err := c.post(ctx, path, &upid); err != nil {
 		return "", fmt.Errorf("rolling back VM %d on node %s to snapshot %q: %w", vmid, node, snapname, err)
 	}
@@ -42,7 +43,7 @@ func (c *Client) RollbackVMSnapshot(ctx context.Context, node string, vmid int, 
 // It returns the UPID of the asynchronous task.
 func (c *Client) DeleteVMSnapshot(ctx context.Context, node string, vmid int, snapname string) (string, error) {
 	var upid string
-	path := "/nodes/" + node + "/qemu/" + strconv.Itoa(vmid) + "/snapshot/" + snapname
+	path := "/nodes/" + node + "/qemu/" + strconv.Itoa(vmid) + "/snapshot/" + url.PathEscape(snapname)
 	if err := c.delete(ctx, path, &upid); err != nil {
 		return "", fmt.Errorf("deleting snapshot %q from VM %d on node %s: %w", snapname, vmid, node, err)
 	}
@@ -74,7 +75,7 @@ func (c *Client) CreateContainerSnapshot(ctx context.Context, node string, vmid 
 // It returns the UPID of the asynchronous task.
 func (c *Client) RollbackContainerSnapshot(ctx context.Context, node string, vmid int, snapname string) (string, error) {
 	var upid string
-	path := "/nodes/" + node + "/lxc/" + strconv.Itoa(vmid) + "/snapshot/" + snapname + "/rollback"
+	path := "/nodes/" + node + "/lxc/" + strconv.Itoa(vmid) + "/snapshot/" + url.PathEscape(snapname) + "/rollback"
 	if err := c.post(ctx, path, &upid); err != nil {
 		return "", fmt.Errorf("rolling back container %d on node %s to snapshot %q: %w", vmid, node, snapname, err)
 	}
@@ -85,7 +86,7 @@ func (c *Client) RollbackContainerSnapshot(ctx context.Context, node string, vmi
 // It returns the UPID of the asynchronous task.
 func (c *Client) DeleteContainerSnapshot(ctx context.Context, node string, vmid int, snapname string) (string, error) {
 	var upid string
-	path := "/nodes/" + node + "/lxc/" + strconv.Itoa(vmid) + "/snapshot/" + snapname
+	path := "/nodes/" + node + "/lxc/" + strconv.Itoa(vmid) + "/snapshot/" + url.PathEscape(snapname)
 	if err := c.delete(ctx, path, &upid); err != nil {
 		return "", fmt.Errorf("deleting snapshot %q from container %d on node %s: %w", snapname, vmid, node, err)
 	}

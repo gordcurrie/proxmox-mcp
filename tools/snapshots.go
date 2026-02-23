@@ -40,11 +40,11 @@ func registerSnapshotTools(s *mcp.Server, client *proxmox.Client) {
 	})
 
 	type createVMSnapInput struct {
-		Node        string `json:"node"        jsonschema:"node the VM is on"`
-		VMID        int    `json:"vmid"        jsonschema:"numeric VM ID"`
-		Name        string `json:"name"        jsonschema:"snapshot name"`
-		Description string `json:"description" jsonschema:"optional snapshot description"`
-		IncludeRAM  bool   `json:"include_ram" jsonschema:"include RAM state in snapshot"`
+		Node        string `json:"node"                  jsonschema:"node the VM is on"`
+		VMID        int    `json:"vmid"                  jsonschema:"numeric VM ID"`
+		Snapname    string `json:"snapname"               jsonschema:"snapshot name"`
+		Description string `json:"description,omitempty" jsonschema:"optional snapshot description"`
+		IncludeRAM  bool   `json:"include_ram,omitempty" jsonschema:"include RAM state in snapshot"`
 	}
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "create_vm_snapshot",
@@ -55,7 +55,7 @@ func registerSnapshotTools(s *mcp.Server, client *proxmox.Client) {
 			vmstate = 1
 		}
 		req := proxmox.CreateVMSnapshotRequest{
-			Snapname:    input.Name,
+			Snapname:    input.Snapname,
 			Description: input.Description,
 			VMState:     vmstate,
 		}
@@ -106,17 +106,17 @@ func registerSnapshotTools(s *mcp.Server, client *proxmox.Client) {
 	})
 
 	type createCTSnapInput struct {
-		Node        string `json:"node"        jsonschema:"node the container is on"`
-		VMID        int    `json:"vmid"        jsonschema:"numeric container ID"`
-		Name        string `json:"name"        jsonschema:"snapshot name"`
-		Description string `json:"description" jsonschema:"optional snapshot description"`
+		Node        string `json:"node"                  jsonschema:"node the container is on"`
+		VMID        int    `json:"vmid"                  jsonschema:"numeric container ID"`
+		Snapname    string `json:"snapname"               jsonschema:"snapshot name"`
+		Description string `json:"description,omitempty" jsonschema:"optional snapshot description"`
 	}
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "create_container_snapshot",
 		Description: "Create a snapshot of an LXC container. Returns the async task ID.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input createCTSnapInput) (*mcp.CallToolResult, any, error) {
 		req := proxmox.CreateContainerSnapshotRequest{
-			Snapname:    input.Name,
+			Snapname:    input.Snapname,
 			Description: input.Description,
 		}
 		upid, err := client.CreateContainerSnapshot(ctx, input.Node, input.VMID, req)
