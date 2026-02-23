@@ -197,3 +197,185 @@ func TestClient_contextCancellation(t *testing.T) {
 		t.Fatal("expected error after context cancellation, got nil")
 	}
 }
+
+func TestClient_postWithBody_success(t *testing.T) {
+	t.Parallel()
+
+	type reqBody struct {
+		Name string `json:"name"`
+	}
+
+	const upid = "UPID:pve:000015E3:00000000:60F4B3A7:qmclone:100:root@pam:"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "wrong method", http.StatusMethodNotAllowed)
+			return
+		}
+		if ct := r.Header.Get("Content-Type"); ct != "application/json" {
+			http.Error(w, "wrong content-type: "+ct, http.StatusBadRequest)
+			return
+		}
+		var body reqBody
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "bad body: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		if body.Name != "cloned-vm" {
+			http.Error(w, "unexpected name: "+body.Name, http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, upid))
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv.URL)
+	var got string
+	if err := c.postWithBody(context.Background(), "/nodes/pve/qemu/100/clone", reqBody{Name: "cloned-vm"}, &got); err != nil {
+		t.Fatalf("postWithBody: %v", err)
+	}
+	if got != upid {
+		t.Errorf("got UPID %q, want %q", got, upid)
+	}
+}
+
+func TestClient_postWithBody_apiError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "insufficient permissions", http.StatusForbidden)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv.URL)
+	var got string
+	err := c.postWithBody(context.Background(), "/nodes/pve/qemu/clone", map[string]any{"newid": 200}, &got)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+	if apiErr.StatusCode != http.StatusForbidden {
+		t.Errorf("expected status 403, got %d", apiErr.StatusCode)
+	}
+}
+
+func TestClient_delete_success(t *testing.T) {
+	t.Parallel()
+
+	const upid = "UPID:pve:000015E3:00000000:60F4B3A7:qmdestroy:100:root@pam:"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			http.Error(w, "wrong method", http.StatusMethodNotAllowed)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, upid))
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv.URL)
+	var got string
+	if err := c.delete(context.Background(), "/nodes/pve/qemu/100", &got); err != nil {
+		t.Fatalf("delete: %v", err)
+	}
+	if got != upid {
+		t.Errorf("got UPID %q, want %q", got, upid)
+	}
+}
+
+func TestClient_delete_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.NotFound(w, nil)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv.URL)
+	err := c.delete(context.Background(), "/nodes/pve/qemu/99999", nil)
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestClient_delete_queryParams(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("purge") != "1" {
+			http.Error(w, "missing purge param", http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, "ok"))
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv.URL)
+	var got string
+	if err := c.delete(context.Background(), "/nodes/pve/qemu/100?purge=1", &got); err != nil {
+		t.Fatalf("delete with query params: %v", err)
+	}
+}
+
+func TestClient_put_success(t *testing.T) {
+	t.Parallel()
+
+	type configBody struct {
+		Memory int `json:"memory"`
+	}
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			http.Error(w, "wrong method", http.StatusMethodNotAllowed)
+			return
+		}
+		if ct := r.Header.Get("Content-Type"); ct != "application/json" {
+			http.Error(w, "wrong content-type: "+ct, http.StatusBadRequest)
+			return
+		}
+		var body configBody
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "bad body: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		if body.Memory != 2048 {
+			http.Error(w, "unexpected memory value", http.StatusBadRequest)
+			return
+		}
+		// Proxmox PUT /config returns null data on success.
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, nil))
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv.URL)
+	if err := c.put(context.Background(), "/nodes/pve/qemu/100/config", configBody{Memory: 2048}, nil); err != nil {
+		t.Fatalf("put: %v", err)
+	}
+}
+
+func TestClient_put_apiError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "parameter validation failed", http.StatusBadRequest)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv.URL)
+	err := c.put(context.Background(), "/nodes/pve/qemu/100/config", map[string]any{"memory": -1}, nil)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+	if apiErr.StatusCode != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", apiErr.StatusCode)
+	}
+}

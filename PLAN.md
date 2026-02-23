@@ -101,13 +101,14 @@ proxmox_mcp/
 
 `InsecureSkipVerify` usage annotated with `//nolint:gosec // G402: user explicitly opted in via PROXMOX_INSECURE=true`.
 
-## Initial MCP Tools (v1)
+## Phase 1 MCP Tools (v0.1.0 — shipped)
 
 | Tool | Description | Params |
 |---|---|---|
 | `list_nodes` | List all nodes in the cluster | — |
 | `get_node_status` | Detailed status of a node | `node` |
 | `list_cluster_resources` | All resources across cluster | `type` (optional: vm, storage, node, sdn) |
+| `get_task_status` | Poll a Proxmox async task by UPID | `node`, `upid` |
 | `list_vms` | QEMU VMs on a node | `node` |
 | `get_vm_status` | VM status + current config | `node`, `vmid` |
 | `start_vm` | Start a VM | `node`, `vmid` |
@@ -119,9 +120,94 @@ proxmox_mcp/
 | `stop_container` | Stop a container | `node`, `vmid` |
 
 Lifecycle operations return task info immediately (non-blocking). Task status can be checked
-separately. Architecture is designed so that full CRUD (create/clone/delete VMs, snapshots,
-storage, migration, firewall, cluster config, etc.) can be added incrementally without
-restructuring.
+separately.
+
+---
+
+## Phase 2 — Full CRUD, Snapshots, Parity, Depth (target: v0.2.0)
+
+Delivered across 6 PRs in strict dependency order. Each PR must pass `make check` and CI
+before merge. Final tool count: **38 tools** (13 existing + 25 new).
+
+### PR 1 — Client foundations: `postWithBody`, `delete`, `put`
+
+Extends `internal/proxmox/client.go` with three new private methods. No new tools — pure
+client layer that all subsequent PRs depend on.
+
+- `postWithBody(ctx, path string, body, result any) error` — marshals body to JSON, sets
+  `Content-Type: application/json`. Required for create/clone/snapshot/migrate.
+- `delete(ctx, path string, result any) error` — sends DELETE. Required for
+  delete VM/container/snapshot.
+- `put(ctx, path string, body, result any) error` — sends PUT with JSON body. Required for
+  `set_vm_config` / `set_container_config` (Phase 3+).
+
+All three covered by `httptest`-based unit tests in `client_test.go`.
+
+### PR 2 — Lifecycle parity (5 new tools)
+
+Uses existing `post()` — no client changes needed.
+
+| Tool | API endpoint |
+|---|---|
+| `reboot_vm` | `POST /nodes/{node}/qemu/{vmid}/status/reboot` |
+| `suspend_vm` | `POST /nodes/{node}/qemu/{vmid}/status/suspend` |
+| `resume_vm` | `POST /nodes/{node}/qemu/{vmid}/status/resume` |
+| `shutdown_container` | `POST /nodes/{node}/lxc/{vmid}/status/shutdown` |
+| `reboot_container` | `POST /nodes/{node}/lxc/{vmid}/status/reboot` |
+
+All return a task ID via `taskResult(upid)`.
+
+### PR 3 — Snapshots (8 new tools)
+
+Depends on PR 1 (`postWithBody` for create, `delete` for delete).
+New file `internal/proxmox/snapshots.go`. New `Snapshot` struct in `types.go`.
+New file `tools/snapshots.go`. `RegisterAll` gains `registerSnapshotTools`.
+
+| Tool | Params |
+|---|---|
+| `list_vm_snapshots` | `node`, `vmid` |
+| `create_vm_snapshot` | `node`, `vmid`, `name`, `description`, `include_ram` |
+| `rollback_vm_snapshot` | `node`, `vmid`, `snapname` |
+| `delete_vm_snapshot` | `node`, `vmid`, `snapname` |
+| `list_container_snapshots` | `node`, `vmid` |
+| `create_container_snapshot` | `node`, `vmid`, `name`, `description` |
+| `rollback_container_snapshot` | `node`, `vmid`, `snapname` |
+| `delete_container_snapshot` | `node`, `vmid`, `snapname` |
+
+### PR 4 — Delete operations (2 new tools)
+
+Depends on PR 1 (`delete()` client method).
+`purge` defaults to `false` — disks are kept unless explicitly set to `true`.
+
+| Tool | Params |
+|---|---|
+| `delete_vm` | `node`, `vmid`, `purge` (bool, default false) |
+| `delete_container` | `node`, `vmid`, `purge` (bool, default false) |
+
+### PR 5 — Create and clone (4 new tools)
+
+Depends on PR 1 (`postWithBody`). New request structs `CreateVMRequest` and
+`CreateContainerRequest` in `types.go` expose a focused subset of Proxmox config options.
+
+| Tool | Params |
+|---|---|
+| `create_vm` | `node`, `vmid`, `name`, `memory`, `cores`, `iso`, `disk_size`, `start` |
+| `clone_vm` | `node`, `vmid`, `newid`, `name`, `target_node` |
+| `create_container` | `node`, `vmid`, `name`, `memory`, `disk_size`, `ostemplate`, `password`, `start` |
+| `clone_container` | `node`, `vmid`, `newid`, `name` |
+
+### PR 6 — Node and cluster depth (6 new tools)
+
+Read-only tools using existing `get()`. No client changes needed.
+
+| Tool | API endpoint |
+|---|---|
+| `get_cluster_status` | `GET /cluster/status` |
+| `list_node_storage` | `GET /nodes/{node}/storage` |
+| `list_node_tasks` | `GET /nodes/{node}/tasks` (params: `node`, `limit`) |
+| `get_node_disks` | `GET /nodes/{node}/disks/list` |
+| `get_vm_config` | `GET /nodes/{node}/qemu/{vmid}/config` |
+| `get_container_config` | `GET /nodes/{node}/lxc/{vmid}/config` |
 
 ## Proxmox API Notes
 

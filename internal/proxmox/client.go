@@ -1,6 +1,7 @@
 package proxmox
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -95,6 +96,69 @@ func (c *Client) post(ctx context.Context, path string, result any) error {
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			slog.Warn("closing post response body", "err", err)
+		}
+	}()
+
+	return c.decode(resp.Body, result)
+}
+
+// postWithBody performs an authenticated POST request to path with body
+// marshalled as JSON. The Proxmox {"data": ...} envelope is unwrapped and
+// decoded into result. Use this for create/clone/snapshot operations that
+// require a request body.
+func (c *Client) postWithBody(ctx context.Context, path string, body, result any) error {
+	data, err := json.Marshal(body)
+	if err != nil {
+		return fmt.Errorf("marshalling request body: %w", err)
+	}
+
+	resp, err := c.do(ctx, http.MethodPost, path, bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			slog.Warn("closing postWithBody response body", "err", err)
+		}
+	}()
+
+	return c.decode(resp.Body, result)
+}
+
+// delete performs an authenticated DELETE request to path (relative to
+// baseURL). The Proxmox {"data": ...} envelope is unwrapped and decoded into
+// result. Include query parameters directly in path where needed
+// (e.g. "/nodes/pve/qemu/100?purge=1").
+func (c *Client) delete(ctx context.Context, path string, result any) error {
+	resp, err := c.do(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			slog.Warn("closing delete response body", "err", err)
+		}
+	}()
+
+	return c.decode(resp.Body, result)
+}
+
+// put performs an authenticated PUT request to path with body marshalled as
+// JSON. The Proxmox {"data": ...} envelope is unwrapped and decoded into
+// result. Use this for updating VM/container configuration.
+func (c *Client) put(ctx context.Context, path string, body, result any) error {
+	data, err := json.Marshal(body)
+	if err != nil {
+		return fmt.Errorf("marshalling request body: %w", err)
+	}
+
+	resp, err := c.do(ctx, http.MethodPut, path, bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			slog.Warn("closing put response body", "err", err)
 		}
 	}()
 
