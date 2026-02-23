@@ -68,6 +68,7 @@ When `InsecureSkipVerify` is needed (Proxmox self-signed TLS), annotate with:
 | `PROXMOX_TOKEN_ID` | yes | e.g. `root@pam!mcp` |
 | `PROXMOX_TOKEN_SECRET` | yes | Token UUID |
 | `PROXMOX_INSECURE` | no | `true` to skip TLS verification |
+| `PROXMOX_ALLOW_DESTRUCTIVE` | no | `true` to register `delete_vm` and `delete_container` (default: disabled) |
 
 ## Security Rules — Non-Negotiable
 

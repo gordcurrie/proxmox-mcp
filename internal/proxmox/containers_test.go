@@ -230,3 +230,69 @@ func TestRebootContainer_apiError(t *testing.T) {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
+
+func TestDeleteContainer_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			http.Error(w, "unexpected method", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/lxc/200" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, ctUPID))
+	}))
+	defer srv.Close()
+
+	upid, err := newTestClient(t, srv.URL).DeleteContainer(context.Background(), "pve1", 200, false)
+	if err != nil {
+		t.Fatalf("DeleteContainer: %v", err)
+	}
+	if upid != ctUPID {
+		t.Errorf("upid: got %q, want %q", upid, ctUPID)
+	}
+}
+
+func TestDeleteContainer_purge(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			http.Error(w, "unexpected method", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/lxc/200" || r.URL.Query().Get("purge") != "1" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, ctUPID))
+	}))
+	defer srv.Close()
+
+	upid, err := newTestClient(t, srv.URL).DeleteContainer(context.Background(), "pve1", 200, true)
+	if err != nil {
+		t.Fatalf("DeleteContainer purge: %v", err)
+	}
+	if upid != ctUPID {
+		t.Errorf("upid: got %q, want %q", upid, ctUPID)
+	}
+}
+
+func TestDeleteContainer_apiError(t *testing.T) {
+	t.Parallel()
+	srv := ctErrorServer(t)
+	defer srv.Close()
+	_, err := newTestClient(t, srv.URL).DeleteContainer(context.Background(), "pve1", 200, false)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}

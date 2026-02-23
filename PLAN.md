@@ -38,11 +38,13 @@ proxmox_mcp/
 │       ├── containers.go     # LXC container API calls
 │       └── tasks.go          # task polling (UPID → status)
 ├── tools/
-│   ├── register.go           # RegisterAll() wires all tools onto the MCP server
+│   ├── register.go           # RegisterAll(cfg Config) wires all tools onto the MCP server
 │   ├── nodes.go              # node MCP tools
 │   ├── vms.go                # VM MCP tools
 │   ├── containers.go         # container MCP tools
-│   └── cluster.go            # cluster-wide MCP tools
+│   ├── cluster.go            # cluster-wide MCP tools
+│   ├── snapshots.go          # snapshot MCP tools (list/create/rollback/delete)
+│   └── destructive.go        # delete_vm, delete_container (opt-in via Config.AllowDestructive)
 ├── .golangci.yml             # linter config
 ├── Makefile                  # quality gate targets
 ├── go.mod
@@ -58,6 +60,7 @@ proxmox_mcp/
 | `PROXMOX_TOKEN_ID` | yes | Token ID, e.g. `root@pam!mcp` |
 | `PROXMOX_TOKEN_SECRET` | yes | Token UUID secret |
 | `PROXMOX_INSECURE` | no | Set `true` to skip TLS verification (self-signed certs) |
+| `PROXMOX_ALLOW_DESTRUCTIVE` | no | Set `true` to register `delete_vm` and `delete_container` tools (default: disabled) |
 
 ## CLI Flags
 
@@ -179,10 +182,17 @@ New file `tools/snapshots.go`. `RegisterAll` gains `registerSnapshotTools`.
 Depends on PR 1 (`delete()` client method).
 `purge` defaults to `false` — disks are kept unless explicitly set to `true`.
 
+**Safety design — 3 layers:**
+1. **Operator gate** — `PROXMOX_ALLOW_DESTRUCTIVE=true` required to register the tools at all. `tools.RegisterAll` accepts a `tools.Config{AllowDestructive bool}` struct; tools remain invisible to the MCP client unless opted in.
+2. **`DestructiveHint: true` annotation** — signals MCP clients to present confirmation UI before calling.
+3. **`confirmed: true` required field** — tool handler returns an error if `confirmed` is not explicitly set to `true`; the model must reason about the action before proceeding.
+
+New file `tools/destructive.go`. `tools.Config` struct added to `tools/register.go`. `RegisterAll` signature updated to accept `Config`.
+
 | Tool | Params |
 |---|---|
-| `delete_vm` | `node`, `vmid`, `purge` (bool, default false) |
-| `delete_container` | `node`, `vmid`, `purge` (bool, default false) |
+| `delete_vm` | `node`, `vmid`, `confirmed` (must be `true`), `purge` (bool, default false) |
+| `delete_container` | `node`, `vmid`, `confirmed` (must be `true`), `purge` (bool, default false) |
 
 ### PR 5 — Create and clone (4 new tools)
 

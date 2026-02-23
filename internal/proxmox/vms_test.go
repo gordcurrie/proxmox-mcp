@@ -288,3 +288,69 @@ func TestResumeVM_apiError(t *testing.T) {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
+
+func TestDeleteVM_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			http.Error(w, "unexpected method", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/qemu/100" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, testUPID))
+	}))
+	defer srv.Close()
+
+	upid, err := newTestClient(t, srv.URL).DeleteVM(context.Background(), "pve1", 100, false)
+	if err != nil {
+		t.Fatalf("DeleteVM: %v", err)
+	}
+	if upid != testUPID {
+		t.Errorf("upid: got %q, want %q", upid, testUPID)
+	}
+}
+
+func TestDeleteVM_purge(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			http.Error(w, "unexpected method", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/qemu/100" || r.URL.Query().Get("purge") != "1" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, testUPID))
+	}))
+	defer srv.Close()
+
+	upid, err := newTestClient(t, srv.URL).DeleteVM(context.Background(), "pve1", 100, true)
+	if err != nil {
+		t.Fatalf("DeleteVM purge: %v", err)
+	}
+	if upid != testUPID {
+		t.Errorf("upid: got %q, want %q", upid, testUPID)
+	}
+}
+
+func TestDeleteVM_apiError(t *testing.T) {
+	t.Parallel()
+	srv := vmErrorServer(t)
+	defer srv.Close()
+	_, err := newTestClient(t, srv.URL).DeleteVM(context.Background(), "pve1", 100, false)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
