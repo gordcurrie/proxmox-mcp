@@ -89,3 +89,18 @@ func (c *Client) ResumeVM(ctx context.Context, node string, vmid int) (string, e
 	}
 	return upid, nil
 }
+
+// DeleteVM deletes a QEMU VM. It returns the UPID of the asynchronous task.
+// If purge is true, associated disk images are also removed.
+// The VM must be stopped before deletion.
+func (c *Client) DeleteVM(ctx context.Context, node string, vmid int, purge bool) (string, error) {
+	var upid string
+	path := "/nodes/" + node + "/qemu/" + strconv.Itoa(vmid)
+	if purge {
+		path += "?purge=1"
+	}
+	if err := c.delete(ctx, path, &upid); err != nil {
+		return "", fmt.Errorf("deleting VM %d on node %s: %w", vmid, node, err)
+	}
+	return upid, nil
+}

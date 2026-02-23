@@ -70,3 +70,18 @@ func (c *Client) RebootContainer(ctx context.Context, node string, vmid int) (st
 	}
 	return upid, nil
 }
+
+// DeleteContainer deletes an LXC container. It returns the UPID of the
+// asynchronous task. If purge is true, associated disk images are also removed.
+// The container must be stopped before deletion.
+func (c *Client) DeleteContainer(ctx context.Context, node string, vmid int, purge bool) (string, error) {
+	var upid string
+	path := "/nodes/" + node + "/lxc/" + strconv.Itoa(vmid)
+	if purge {
+		path += "?purge=1"
+	}
+	if err := c.delete(ctx, path, &upid); err != nil {
+		return "", fmt.Errorf("deleting container %d on node %s: %w", vmid, node, err)
+	}
+	return upid, nil
+}
