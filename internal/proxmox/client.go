@@ -114,7 +114,7 @@ func (c *Client) do(ctx context.Context, method, path string, body io.Reader) (*
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	resp, err := c.httpClient.Do(req) //nolint:gosec // G704: URL is constructed from PROXMOX_API_URL which the user must explicitly supply
+	resp, err := c.httpClient.Do(req) /* #nosec G704 */ //nolint:gosec // G704: URL is constructed from PROXMOX_API_URL which the user must explicitly supply
 	if err != nil {
 		return nil, fmt.Errorf("executing request %s %s: %w", method, path, err)
 	}
