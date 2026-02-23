@@ -123,3 +123,52 @@ func TestStopContainer_success(t *testing.T) {
 		t.Errorf("upid: got %q, want %q", upid, ctUPID)
 	}
 }
+
+func ctErrorServer(t *testing.T) *httptest.Server {
+	t.Helper()
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "CT is locked", http.StatusInternalServerError)
+	}))
+}
+
+func TestGetContainerStatus_apiError(t *testing.T) {
+	t.Parallel()
+	srv := ctErrorServer(t)
+	defer srv.Close()
+	_, err := newTestClient(t, srv.URL).GetContainerStatus(context.Background(), "pve1", 200)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
+
+func TestStartContainer_apiError(t *testing.T) {
+	t.Parallel()
+	srv := ctErrorServer(t)
+	defer srv.Close()
+	_, err := newTestClient(t, srv.URL).StartContainer(context.Background(), "pve1", 200)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
+
+func TestStopContainer_apiError(t *testing.T) {
+	t.Parallel()
+	srv := ctErrorServer(t)
+	defer srv.Close()
+	_, err := newTestClient(t, srv.URL).StopContainer(context.Background(), "pve1", 200)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
