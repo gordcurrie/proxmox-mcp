@@ -61,4 +61,26 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		return taskResult(upid)
 	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "shutdown_container",
+		Description: "Gracefully shut down an LXC container via ACPI. Returns the async task ID.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input containerInput) (*mcp.CallToolResult, any, error) {
+		upid, err := client.ShutdownContainer(ctx, input.Node, input.VMID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("shutdown_container: %w", err)
+		}
+		return taskResult(upid)
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "reboot_container",
+		Description: "Reboot an LXC container. Returns the async task ID.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input containerInput) (*mcp.CallToolResult, any, error) {
+		upid, err := client.RebootContainer(ctx, input.Node, input.VMID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("reboot_container: %w", err)
+		}
+		return taskResult(upid)
+	})
 }

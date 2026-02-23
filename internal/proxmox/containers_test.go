@@ -172,3 +172,61 @@ func TestStopContainer_apiError(t *testing.T) {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
+
+func TestShutdownContainer_success(t *testing.T) {
+	t.Parallel()
+
+	srv := ctLifecycleServer(t, "/nodes/pve1/lxc/200/status/shutdown")
+	defer srv.Close()
+
+	upid, err := newTestClient(t, srv.URL).ShutdownContainer(context.Background(), "pve1", 200)
+	if err != nil {
+		t.Fatalf("ShutdownContainer: %v", err)
+	}
+	if upid != ctUPID {
+		t.Errorf("upid: got %q, want %q", upid, ctUPID)
+	}
+}
+
+func TestShutdownContainer_apiError(t *testing.T) {
+	t.Parallel()
+	srv := ctErrorServer(t)
+	defer srv.Close()
+	_, err := newTestClient(t, srv.URL).ShutdownContainer(context.Background(), "pve1", 200)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
+
+func TestRebootContainer_success(t *testing.T) {
+	t.Parallel()
+
+	srv := ctLifecycleServer(t, "/nodes/pve1/lxc/200/status/reboot")
+	defer srv.Close()
+
+	upid, err := newTestClient(t, srv.URL).RebootContainer(context.Background(), "pve1", 200)
+	if err != nil {
+		t.Fatalf("RebootContainer: %v", err)
+	}
+	if upid != ctUPID {
+		t.Errorf("upid: got %q, want %q", upid, ctUPID)
+	}
+}
+
+func TestRebootContainer_apiError(t *testing.T) {
+	t.Parallel()
+	srv := ctErrorServer(t)
+	defer srv.Close()
+	_, err := newTestClient(t, srv.URL).RebootContainer(context.Background(), "pve1", 200)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
