@@ -59,3 +59,33 @@ func (c *Client) ShutdownVM(ctx context.Context, node string, vmid int) (string,
 	}
 	return upid, nil
 }
+
+// RebootVM reboots a QEMU VM. It returns the UPID of the asynchronous task.
+func (c *Client) RebootVM(ctx context.Context, node string, vmid int) (string, error) {
+	var upid string
+	path := "/nodes/" + node + "/qemu/" + strconv.Itoa(vmid) + "/status/reboot"
+	if err := c.post(ctx, path, &upid); err != nil {
+		return "", fmt.Errorf("rebooting VM %d on node %s: %w", vmid, node, err)
+	}
+	return upid, nil
+}
+
+// SuspendVM suspends a QEMU VM. It returns the UPID of the asynchronous task.
+func (c *Client) SuspendVM(ctx context.Context, node string, vmid int) (string, error) {
+	var upid string
+	path := "/nodes/" + node + "/qemu/" + strconv.Itoa(vmid) + "/status/suspend"
+	if err := c.post(ctx, path, &upid); err != nil {
+		return "", fmt.Errorf("suspending VM %d on node %s: %w", vmid, node, err)
+	}
+	return upid, nil
+}
+
+// ResumeVM resumes a suspended QEMU VM. It returns the UPID of the asynchronous task.
+func (c *Client) ResumeVM(ctx context.Context, node string, vmid int) (string, error) {
+	var upid string
+	path := "/nodes/" + node + "/qemu/" + strconv.Itoa(vmid) + "/status/resume"
+	if err := c.post(ctx, path, &upid); err != nil {
+		return "", fmt.Errorf("resuming VM %d on node %s: %w", vmid, node, err)
+	}
+	return upid, nil
+}

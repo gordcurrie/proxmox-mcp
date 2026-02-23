@@ -48,3 +48,25 @@ func (c *Client) StopContainer(ctx context.Context, node string, vmid int) (stri
 	}
 	return upid, nil
 }
+
+// ShutdownContainer gracefully shuts down an LXC container via ACPI.
+// It returns the UPID of the asynchronous task.
+func (c *Client) ShutdownContainer(ctx context.Context, node string, vmid int) (string, error) {
+	var upid string
+	path := "/nodes/" + node + "/lxc/" + strconv.Itoa(vmid) + "/status/shutdown"
+	if err := c.post(ctx, path, &upid); err != nil {
+		return "", fmt.Errorf("shutting down container %d on node %s: %w", vmid, node, err)
+	}
+	return upid, nil
+}
+
+// RebootContainer reboots an LXC container. It returns the UPID of the
+// asynchronous task.
+func (c *Client) RebootContainer(ctx context.Context, node string, vmid int) (string, error) {
+	var upid string
+	path := "/nodes/" + node + "/lxc/" + strconv.Itoa(vmid) + "/status/reboot"
+	if err := c.post(ctx, path, &upid); err != nil {
+		return "", fmt.Errorf("rebooting container %d on node %s: %w", vmid, node, err)
+	}
+	return upid, nil
+}

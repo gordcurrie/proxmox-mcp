@@ -72,4 +72,37 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		return taskResult(upid)
 	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "reboot_vm",
+		Description: "Reboot a QEMU VM. Returns the async task ID.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input vmInput) (*mcp.CallToolResult, any, error) {
+		upid, err := client.RebootVM(ctx, input.Node, input.VMID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("reboot_vm: %w", err)
+		}
+		return taskResult(upid)
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "suspend_vm",
+		Description: "Suspend a QEMU VM. Returns the async task ID.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input vmInput) (*mcp.CallToolResult, any, error) {
+		upid, err := client.SuspendVM(ctx, input.Node, input.VMID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("suspend_vm: %w", err)
+		}
+		return taskResult(upid)
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "resume_vm",
+		Description: "Resume a suspended QEMU VM. Returns the async task ID.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input vmInput) (*mcp.CallToolResult, any, error) {
+		upid, err := client.ResumeVM(ctx, input.Node, input.VMID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("resume_vm: %w", err)
+		}
+		return taskResult(upid)
+	})
 }

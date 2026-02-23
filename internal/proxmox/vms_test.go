@@ -201,3 +201,90 @@ func TestShutdownVM_apiError(t *testing.T) {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
+
+func TestRebootVM_success(t *testing.T) {
+	t.Parallel()
+
+	srv := vmLifecycleServer(t, "/nodes/pve1/qemu/100/status/reboot")
+	defer srv.Close()
+
+	upid, err := newTestClient(t, srv.URL).RebootVM(context.Background(), "pve1", 100)
+	if err != nil {
+		t.Fatalf("RebootVM: %v", err)
+	}
+	if upid != testUPID {
+		t.Errorf("upid: got %q, want %q", upid, testUPID)
+	}
+}
+
+func TestRebootVM_apiError(t *testing.T) {
+	t.Parallel()
+	srv := vmErrorServer(t)
+	defer srv.Close()
+	_, err := newTestClient(t, srv.URL).RebootVM(context.Background(), "pve1", 100)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
+
+func TestSuspendVM_success(t *testing.T) {
+	t.Parallel()
+
+	srv := vmLifecycleServer(t, "/nodes/pve1/qemu/100/status/suspend")
+	defer srv.Close()
+
+	upid, err := newTestClient(t, srv.URL).SuspendVM(context.Background(), "pve1", 100)
+	if err != nil {
+		t.Fatalf("SuspendVM: %v", err)
+	}
+	if upid != testUPID {
+		t.Errorf("upid: got %q, want %q", upid, testUPID)
+	}
+}
+
+func TestSuspendVM_apiError(t *testing.T) {
+	t.Parallel()
+	srv := vmErrorServer(t)
+	defer srv.Close()
+	_, err := newTestClient(t, srv.URL).SuspendVM(context.Background(), "pve1", 100)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
+
+func TestResumeVM_success(t *testing.T) {
+	t.Parallel()
+
+	srv := vmLifecycleServer(t, "/nodes/pve1/qemu/100/status/resume")
+	defer srv.Close()
+
+	upid, err := newTestClient(t, srv.URL).ResumeVM(context.Background(), "pve1", 100)
+	if err != nil {
+		t.Fatalf("ResumeVM: %v", err)
+	}
+	if upid != testUPID {
+		t.Errorf("upid: got %q, want %q", upid, testUPID)
+	}
+}
+
+func TestResumeVM_apiError(t *testing.T) {
+	t.Parallel()
+	srv := vmErrorServer(t)
+	defer srv.Close()
+	_, err := newTestClient(t, srv.URL).ResumeVM(context.Background(), "pve1", 100)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
