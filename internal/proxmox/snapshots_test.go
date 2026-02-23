@@ -71,6 +71,20 @@ func TestListVMSnapshots_apiError(t *testing.T) {
 	}
 }
 
+func TestListVMSnapshots_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient(t, srv.URL).ListVMSnapshots(context.Background(), "missing", 999)
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
 func TestCreateVMSnapshot_success(t *testing.T) {
 	t.Parallel()
 
@@ -192,6 +206,20 @@ func TestListContainerSnapshots_apiError(t *testing.T) {
 	var apiErr *APIError
 	if !errors.As(err, &apiErr) {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
+
+func TestListContainerSnapshots_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient(t, srv.URL).ListContainerSnapshots(context.Background(), "missing", 999)
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }
 
