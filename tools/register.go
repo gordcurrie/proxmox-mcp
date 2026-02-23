@@ -12,4 +12,5 @@ func RegisterAll(s *mcp.Server, client *proxmox.Client) {
 	registerVMTools(s, client)
 	registerContainerTools(s, client)
 	registerClusterTools(s, client)
+	registerSnapshotTools(s, client)
 }

@@ -90,6 +90,29 @@ type TaskStatus struct {
 	StartTime  int64  `json:"starttime"`
 }
 
+// Snapshot represents a single entry from GET /nodes/{node}/qemu/{vmid}/snapshot
+// or GET /nodes/{node}/lxc/{vmid}/snapshot.
+type Snapshot struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Parent      string `json:"parent,omitempty"`
+	SnapTime    int64  `json:"snaptime,omitempty"`
+	VMState     int    `json:"vmstate,omitempty"` // 1 if RAM was included (VM only)
+}
+
+// CreateVMSnapshotRequest is the request body for POST /nodes/{node}/qemu/{vmid}/snapshot.
+type CreateVMSnapshotRequest struct {
+	Snapname    string `json:"snapname"`
+	Description string `json:"description,omitempty"`
+	VMState     int    `json:"vmstate,omitempty"` // 1 to include RAM state
+}
+
+// CreateContainerSnapshotRequest is the request body for POST /nodes/{node}/lxc/{vmid}/snapshot.
+type CreateContainerSnapshotRequest struct {
+	Snapname    string `json:"snapname"`
+	Description string `json:"description,omitempty"`
+}
+
 // APIError represents an HTTP-level error returned by the Proxmox API.
 type APIError struct {
 	StatusCode int
