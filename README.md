@@ -56,7 +56,7 @@ set -a && source .env && set +a
 
 ## Running
 
-### stdio (default — for local MCP clients like Claude Desktop)
+### stdio (default — for local MCP clients)
 
 ```bash
 ./bin/proxmox-mcp
@@ -68,25 +68,27 @@ set -a && source .env && set +a
 ./bin/proxmox-mcp --transport http --addr localhost:8080
 ```
 
-## Claude Desktop configuration
+## VS Code Copilot configuration
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+Create `.vscode/mcp.json` in your workspace (already gitignored):
 
 ```json
 {
-  "mcpServers": {
-    "proxmox": {
+  "servers": {
+    "proxmox-mcp": {
+      "type": "stdio",
       "command": "/path/to/proxmox-mcp/bin/proxmox-mcp",
       "env": {
         "PROXMOX_API_URL": "https://pve:8006/api2/json",
         "PROXMOX_TOKEN_ID": "root@pam!mcp",
-        "PROXMOX_TOKEN_SECRET": "your-token-secret",
-        "PROXMOX_INSECURE": "true"
+        "PROXMOX_TOKEN_SECRET": "your-token-secret"
       }
     }
   }
 }
 ```
+
+Then open the Copilot chat panel, switch to **Agent** mode, and the `proxmox-mcp` server will appear in the available tools.
 
 ## Development
 
