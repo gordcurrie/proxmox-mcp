@@ -138,3 +138,66 @@ func TestShutdownVM_success(t *testing.T) {
 		t.Errorf("upid: got %q, want %q", upid, testUPID)
 	}
 }
+
+func vmErrorServer(t *testing.T) *httptest.Server {
+	t.Helper()
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "VM is locked", http.StatusInternalServerError)
+	}))
+}
+
+func TestGetVMStatus_apiError(t *testing.T) {
+	t.Parallel()
+	srv := vmErrorServer(t)
+	defer srv.Close()
+	_, err := newTestClient(t, srv.URL).GetVMStatus(context.Background(), "pve1", 100)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
+
+func TestStartVM_apiError(t *testing.T) {
+	t.Parallel()
+	srv := vmErrorServer(t)
+	defer srv.Close()
+	_, err := newTestClient(t, srv.URL).StartVM(context.Background(), "pve1", 100)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
+
+func TestStopVM_apiError(t *testing.T) {
+	t.Parallel()
+	srv := vmErrorServer(t)
+	defer srv.Close()
+	_, err := newTestClient(t, srv.URL).StopVM(context.Background(), "pve1", 100)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
+
+func TestShutdownVM_apiError(t *testing.T) {
+	t.Parallel()
+	srv := vmErrorServer(t)
+	defer srv.Close()
+	_, err := newTestClient(t, srv.URL).ShutdownVM(context.Background(), "pve1", 100)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}

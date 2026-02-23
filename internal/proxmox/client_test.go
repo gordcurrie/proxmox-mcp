@@ -169,6 +169,88 @@ func TestClient_post_returnsUPID(t *testing.T) {
 	}
 }
 
+func TestClient_Version_success(t *testing.T) {
+	t.Parallel()
+
+	want := map[string]any{"version": "8.4.0", "release": "8"}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/version" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, want))
+	}))
+	defer srv.Close()
+
+	got, err := newTestClient(t, srv.URL).Version(context.Background())
+	if err != nil {
+		t.Fatalf("Version: %v", err)
+	}
+	if got["version"] != "8.4.0" {
+		t.Errorf("version: got %v, want 8.4.0", got["version"])
+	}
+}
+
+func TestClient_Version_error(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "service unavailable", http.StatusServiceUnavailable)
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient(t, srv.URL).Version(context.Background())
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
+
+func TestClient_post_apiError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "VM is locked", http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv.URL)
+	var got string
+	err := c.post(context.Background(), "/nodes/pve1/qemu/100/status/start", &got)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+	if apiErr.StatusCode != http.StatusInternalServerError {
+		t.Errorf("expected status 500, got %d", apiErr.StatusCode)
+	}
+}
+
+func TestClient_decode_malformedJSON(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		// Return malformed JSON — not a valid Proxmox envelope.
+		_, _ = w.Write([]byte(`{not valid json`))
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv.URL)
+	var got map[string]any
+	err := c.get(context.Background(), "/nodes", &got)
+	if err == nil {
+		t.Fatal("expected error for malformed JSON, got nil")
+	}
+}
+
 func TestClient_contextCancellation(t *testing.T) {
 	t.Parallel()
 
