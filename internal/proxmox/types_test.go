@@ -2,6 +2,7 @@ package proxmox
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"testing"
 )
@@ -79,6 +80,17 @@ func TestSensitiveString_Redaction(t *testing.T) {
 	t.Run("String() redacts", func(t *testing.T) {
 		if got := s.String(); got != "[REDACTED]" {
 			t.Errorf("String() = %q, want \"[REDACTED]\"", got)
+		}
+	})
+
+	t.Run("GoString() redacts", func(t *testing.T) {
+		if got := s.GoString(); got != "[REDACTED]" {
+			t.Errorf("GoString() = %q, want \"[REDACTED]\"", got)
+		}
+		// %#v must not contain the secret
+		verbose := fmt.Sprintf("%#v", s)
+		if verbose == secret {
+			t.Errorf("%%#v leaked secret value")
 		}
 	})
 

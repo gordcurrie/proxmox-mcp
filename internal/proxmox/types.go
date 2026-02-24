@@ -17,6 +17,10 @@ type SensitiveString string
 // emitted by fmt.Print, fmt.Sprintf, log, or any logger that calls String().
 func (s SensitiveString) String() string { return "[REDACTED]" }
 
+// GoString implements fmt.GoStringer — returns "[REDACTED]" so the value is
+// never leaked via %#v formatting.
+func (s SensitiveString) GoString() string { return "[REDACTED]" }
+
 // MarshalJSON implements json.Marshaler — emits the real underlying value so
 // that API request bodies are serialised correctly.
 func (s SensitiveString) MarshalJSON() ([]byte, error) {
