@@ -414,7 +414,7 @@ func TestCloneVM_success(t *testing.T) {
 	defer srv.Close()
 
 	req := CloneVMRequest{NewID: 201, Name: "cloned-vm"}
-	upid, err := newTestClient(t, srv.URL).CloneVM(context.Background(), "pve1", 100, req)
+	upid, err := newTestClient(t, srv.URL).CloneVM(context.Background(), "pve1", 100, &req)
 	if err != nil {
 		t.Fatalf("CloneVM: %v", err)
 	}
@@ -427,7 +427,7 @@ func TestCloneVM_apiError(t *testing.T) {
 	t.Parallel()
 	srv := vmErrorServer(t)
 	defer srv.Close()
-	_, err := newTestClient(t, srv.URL).CloneVM(context.Background(), "pve1", 100, CloneVMRequest{NewID: 201})
+	_, err := newTestClient(t, srv.URL).CloneVM(context.Background(), "pve1", 100, &CloneVMRequest{NewID: 201})
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}

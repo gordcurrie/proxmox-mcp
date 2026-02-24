@@ -136,7 +136,7 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 			Hostname: input.Hostname,
 			Target:   input.TargetNode,
 		}
-		upid, err := client.CloneContainer(ctx, input.Node, input.VMID, req)
+		upid, err := client.CloneContainer(ctx, input.Node, input.VMID, &req)
 		if err != nil {
 			return nil, nil, fmt.Errorf("clone_container: %w", err)
 		}

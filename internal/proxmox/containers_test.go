@@ -365,7 +365,7 @@ func TestCloneContainer_success(t *testing.T) {
 	defer srv.Close()
 
 	req := CloneContainerRequest{NewID: 301, Hostname: "cloned-ct"}
-	upid, err := newTestClient(t, srv.URL).CloneContainer(context.Background(), "pve1", 200, req)
+	upid, err := newTestClient(t, srv.URL).CloneContainer(context.Background(), "pve1", 200, &req)
 	if err != nil {
 		t.Fatalf("CloneContainer: %v", err)
 	}
@@ -378,7 +378,7 @@ func TestCloneContainer_apiError(t *testing.T) {
 	t.Parallel()
 	srv := ctErrorServer(t)
 	defer srv.Close()
-	_, err := newTestClient(t, srv.URL).CloneContainer(context.Background(), "pve1", 200, CloneContainerRequest{NewID: 301})
+	_, err := newTestClient(t, srv.URL).CloneContainer(context.Background(), "pve1", 200, &CloneContainerRequest{NewID: 301})
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}

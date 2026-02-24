@@ -2,6 +2,7 @@ package proxmox
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 )
@@ -108,6 +109,9 @@ func (c *Client) DeleteVM(ctx context.Context, node string, vmid int, purge bool
 // CreateVM creates a new QEMU VM on the specified node. It returns the UPID
 // of the asynchronous task.
 func (c *Client) CreateVM(ctx context.Context, node string, req *CreateVMRequest) (string, error) {
+	if req == nil {
+		return "", errors.New("CreateVM: req must not be nil")
+	}
 	var upid string
 	path := "/nodes/" + node + "/qemu"
 	if err := c.postWithBody(ctx, path, req, &upid); err != nil {
@@ -118,7 +122,10 @@ func (c *Client) CreateVM(ctx context.Context, node string, req *CreateVMRequest
 
 // CloneVM clones an existing QEMU VM to a new VM ID. It returns the UPID
 // of the asynchronous task.
-func (c *Client) CloneVM(ctx context.Context, node string, vmid int, req CloneVMRequest) (string, error) {
+func (c *Client) CloneVM(ctx context.Context, node string, vmid int, req *CloneVMRequest) (string, error) {
+	if req == nil {
+		return "", errors.New("CloneVM: req must not be nil")
+	}
 	var upid string
 	path := "/nodes/" + node + "/qemu/" + strconv.Itoa(vmid) + "/clone"
 	if err := c.postWithBody(ctx, path, req, &upid); err != nil {

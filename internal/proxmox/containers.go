@@ -2,6 +2,7 @@ package proxmox
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 )
@@ -89,6 +90,9 @@ func (c *Client) DeleteContainer(ctx context.Context, node string, vmid int, pur
 // CreateContainer creates a new LXC container on the specified node. It returns
 // the UPID of the asynchronous task.
 func (c *Client) CreateContainer(ctx context.Context, node string, req *CreateContainerRequest) (string, error) {
+	if req == nil {
+		return "", errors.New("CreateContainer: req must not be nil")
+	}
 	var upid string
 	path := "/nodes/" + node + "/lxc"
 	if err := c.postWithBody(ctx, path, req, &upid); err != nil {
@@ -99,7 +103,10 @@ func (c *Client) CreateContainer(ctx context.Context, node string, req *CreateCo
 
 // CloneContainer clones an existing LXC container to a new container ID. It
 // returns the UPID of the asynchronous task.
-func (c *Client) CloneContainer(ctx context.Context, node string, vmid int, req CloneContainerRequest) (string, error) {
+func (c *Client) CloneContainer(ctx context.Context, node string, vmid int, req *CloneContainerRequest) (string, error) {
+	if req == nil {
+		return "", errors.New("CloneContainer: req must not be nil")
+	}
 	var upid string
 	path := "/nodes/" + node + "/lxc/" + strconv.Itoa(vmid) + "/clone"
 	if err := c.postWithBody(ctx, path, req, &upid); err != nil {

@@ -158,7 +158,7 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 			Name:   input.Name,
 			Target: input.TargetNode,
 		}
-		upid, err := client.CloneVM(ctx, input.Node, input.VMID, req)
+		upid, err := client.CloneVM(ctx, input.Node, input.VMID, &req)
 		if err != nil {
 			return nil, nil, fmt.Errorf("clone_vm: %w", err)
 		}
