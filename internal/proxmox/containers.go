@@ -85,3 +85,25 @@ func (c *Client) DeleteContainer(ctx context.Context, node string, vmid int, pur
 	}
 	return upid, nil
 }
+
+// CreateContainer creates a new LXC container on the specified node. It returns
+// the UPID of the asynchronous task.
+func (c *Client) CreateContainer(ctx context.Context, node string, req *CreateContainerRequest) (string, error) {
+	var upid string
+	path := "/nodes/" + node + "/lxc"
+	if err := c.postWithBody(ctx, path, req, &upid); err != nil {
+		return "", fmt.Errorf("creating container %d on node %s: %w", req.VMID, node, err)
+	}
+	return upid, nil
+}
+
+// CloneContainer clones an existing LXC container to a new container ID. It
+// returns the UPID of the asynchronous task.
+func (c *Client) CloneContainer(ctx context.Context, node string, vmid int, req CloneContainerRequest) (string, error) {
+	var upid string
+	path := "/nodes/" + node + "/lxc/" + strconv.Itoa(vmid) + "/clone"
+	if err := c.postWithBody(ctx, path, req, &upid); err != nil {
+		return "", fmt.Errorf("cloning container %d on node %s: %w", vmid, node, err)
+	}
+	return upid, nil
+}

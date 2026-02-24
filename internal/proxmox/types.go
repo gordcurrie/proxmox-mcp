@@ -4,7 +4,41 @@ package proxmox
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"log/slog"
 )
+
+// SensitiveString is a string type that redacts its value from fmt and slog
+// output to prevent accidental logging of secrets. It marshals its real value
+// to JSON so it can be used directly in API request bodies.
+type SensitiveString string
+
+// String implements fmt.Stringer — returns "[REDACTED]" so the value is never
+// emitted by fmt.Print, fmt.Sprintf, log, or any logger that calls String().
+func (s SensitiveString) String() string { return "[REDACTED]" }
+
+// MarshalJSON implements json.Marshaler — emits the real underlying value so
+// that API request bodies are serialised correctly.
+func (s SensitiveString) MarshalJSON() ([]byte, error) {
+	return json.Marshal(string(s))
+}
+
+// LogValue implements slog.LogValuer — prevents the value from appearing in
+// structured log output produced by log/slog.
+func (s SensitiveString) LogValue() slog.Value {
+	return slog.StringValue("[REDACTED]")
+}
+
+// UnmarshalJSON implements json.Unmarshaler — decodes a plain JSON string into
+// a SensitiveString so it can be used as an MCP tool input field.
+func (s *SensitiveString) UnmarshalJSON(data []byte) error {
+	var v string
+	if err := json.Unmarshal(data, &v); err != nil {
+		return fmt.Errorf("unmarshalling SensitiveString: %w", err)
+	}
+	*s = SensitiveString(v)
+	return nil
+}
 
 // ErrNotFound is returned when a requested resource does not exist (HTTP 404).
 var ErrNotFound = errors.New("resource not found")
@@ -111,6 +145,48 @@ type CreateVMSnapshotRequest struct {
 type CreateContainerSnapshotRequest struct {
 	Snapname    string `json:"snapname"`
 	Description string `json:"description,omitempty"`
+}
+
+// CreateVMRequest is the request body for POST /nodes/{node}/qemu.
+// Fields map directly to Proxmox API parameters. Zero values are omitted.
+type CreateVMRequest struct {
+	VMID   int    `json:"vmid"`
+	Name   string `json:"name,omitempty"`
+	Memory int    `json:"memory,omitempty"` // MB
+	Cores  int    `json:"cores,omitempty"`
+	IDE2   string `json:"ide2,omitempty"`   // ISO drive, e.g. "local:iso/file.iso,media=cdrom"
+	SCSI0  string `json:"scsi0,omitempty"`  // Primary disk, e.g. "local-lvm:32"
+	SCSIHW string `json:"scsihw,omitempty"` // Controller, e.g. "virtio-scsi-pci"
+	Net0   string `json:"net0,omitempty"`   // Network, e.g. "virtio,bridge=vmbr0"
+	OSType string `json:"ostype,omitempty"` // e.g. "l26" for Linux 2.6+
+	Start  int    `json:"start,omitempty"`  // 1 to start after creation
+}
+
+// CloneVMRequest is the request body for POST /nodes/{node}/qemu/{vmid}/clone.
+type CloneVMRequest struct {
+	NewID  int    `json:"newid"`
+	Name   string `json:"name,omitempty"`
+	Target string `json:"target,omitempty"` // target node; defaults to source node
+}
+
+// CreateContainerRequest is the request body for POST /nodes/{node}/lxc.
+// Fields map directly to Proxmox API parameters. Zero values are omitted.
+type CreateContainerRequest struct {
+	VMID       int             `json:"vmid"`
+	OSTemplate string          `json:"ostemplate"` // e.g. "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst"
+	Hostname   string          `json:"hostname,omitempty"`
+	Memory     int             `json:"memory,omitempty"` // MB
+	RootFS     string          `json:"rootfs,omitempty"` // e.g. "local-lvm:8"
+	Password   SensitiveString `json:"password,omitempty"`
+	Net0       string          `json:"net0,omitempty"`  // e.g. "name=eth0,bridge=vmbr0,dhcp=1"
+	Start      int             `json:"start,omitempty"` // 1 to start after creation
+}
+
+// CloneContainerRequest is the request body for POST /nodes/{node}/lxc/{vmid}/clone.
+type CloneContainerRequest struct {
+	NewID    int    `json:"newid"`
+	Hostname string `json:"hostname,omitempty"`
+	Target   string `json:"target,omitempty"` // target node; defaults to source node
 }
 
 // APIError represents an HTTP-level error returned by the Proxmox API.

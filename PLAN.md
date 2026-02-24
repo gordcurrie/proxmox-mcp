@@ -196,15 +196,21 @@ New file `tools/destructive.go`. `tools.Config` struct added to `tools/register.
 
 ### PR 5 — Create and clone (4 new tools)
 
-Depends on PR 1 (`postWithBody`). New request structs `CreateVMRequest` and
-`CreateContainerRequest` in `types.go` expose a focused subset of Proxmox config options.
+Depends on PR 1 (`postWithBody`). New request structs `CreateVMRequest`, `CloneVMRequest`,
+`CreateContainerRequest`, and `CloneContainerRequest` in `types.go` expose a focused subset
+of Proxmox config options. Client methods take request structs by pointer (gocritic hugeParam).
+
+New `SensitiveString` type in `types.go`: redacts value from `fmt` and `slog` output via
+`fmt.Stringer` and `slog.LogValuer`, but marshals the real value to JSON for API calls.
+`CreateContainerRequest.Password` uses `SensitiveString` — no `//nolint` directives needed.
+`SensitiveString` also implements `json.Unmarshaler` so it works directly as an MCP input field.
 
 | Tool | Params |
 |---|---|
-| `create_vm` | `node`, `vmid`, `name`, `memory`, `cores`, `iso`, `disk_size`, `start` |
+| `create_vm` | `node`, `vmid`, `name`, `memory`, `cores`, `iso`, `disk`, `net0`, `start` |
 | `clone_vm` | `node`, `vmid`, `newid`, `name`, `target_node` |
-| `create_container` | `node`, `vmid`, `name`, `memory`, `disk_size`, `ostemplate`, `password`, `start` |
-| `clone_container` | `node`, `vmid`, `newid`, `name` |
+| `create_container` | `node`, `vmid`, `ostemplate`, `hostname`, `memory`, `rootfs`, `password`, `net0`, `start` |
+| `clone_container` | `node`, `vmid`, `newid`, `hostname`, `target_node` |
 
 ### PR 6 — Node and cluster depth (6 new tools)
 

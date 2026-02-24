@@ -296,3 +296,94 @@ func TestDeleteContainer_apiError(t *testing.T) {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
+
+func TestCreateContainer_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "want POST", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/lxc" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, ctUPID))
+	}))
+	defer srv.Close()
+
+	req := CreateContainerRequest{
+		VMID:       300,
+		OSTemplate: "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst",
+		Hostname:   "test-ct",
+		Memory:     512,
+		RootFS:     "local-lvm:8",
+	}
+	upid, err := newTestClient(t, srv.URL).CreateContainer(context.Background(), "pve1", &req)
+	if err != nil {
+		t.Fatalf("CreateContainer: %v", err)
+	}
+	if upid != ctUPID {
+		t.Errorf("upid: got %q, want %q", upid, ctUPID)
+	}
+}
+
+func TestCreateContainer_apiError(t *testing.T) {
+	t.Parallel()
+	srv := ctErrorServer(t)
+	defer srv.Close()
+	_, err := newTestClient(t, srv.URL).CreateContainer(context.Background(), "pve1", &CreateContainerRequest{
+		VMID:       300,
+		OSTemplate: "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst",
+	})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
+
+func TestCloneContainer_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "want POST", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/lxc/200/clone" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, ctUPID))
+	}))
+	defer srv.Close()
+
+	req := CloneContainerRequest{NewID: 301, Hostname: "cloned-ct"}
+	upid, err := newTestClient(t, srv.URL).CloneContainer(context.Background(), "pve1", 200, req)
+	if err != nil {
+		t.Fatalf("CloneContainer: %v", err)
+	}
+	if upid != ctUPID {
+		t.Errorf("upid: got %q, want %q", upid, ctUPID)
+	}
+}
+
+func TestCloneContainer_apiError(t *testing.T) {
+	t.Parallel()
+	srv := ctErrorServer(t)
+	defer srv.Close()
+	_, err := newTestClient(t, srv.URL).CloneContainer(context.Background(), "pve1", 200, CloneContainerRequest{NewID: 301})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}

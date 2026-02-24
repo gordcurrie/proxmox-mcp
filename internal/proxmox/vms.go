@@ -104,3 +104,25 @@ func (c *Client) DeleteVM(ctx context.Context, node string, vmid int, purge bool
 	}
 	return upid, nil
 }
+
+// CreateVM creates a new QEMU VM on the specified node. It returns the UPID
+// of the asynchronous task.
+func (c *Client) CreateVM(ctx context.Context, node string, req *CreateVMRequest) (string, error) {
+	var upid string
+	path := "/nodes/" + node + "/qemu"
+	if err := c.postWithBody(ctx, path, req, &upid); err != nil {
+		return "", fmt.Errorf("creating VM %d on node %s: %w", req.VMID, node, err)
+	}
+	return upid, nil
+}
+
+// CloneVM clones an existing QEMU VM to a new VM ID. It returns the UPID
+// of the asynchronous task.
+func (c *Client) CloneVM(ctx context.Context, node string, vmid int, req CloneVMRequest) (string, error) {
+	var upid string
+	path := "/nodes/" + node + "/qemu/" + strconv.Itoa(vmid) + "/clone"
+	if err := c.postWithBody(ctx, path, req, &upid); err != nil {
+		return "", fmt.Errorf("cloning VM %d on node %s: %w", vmid, node, err)
+	}
+	return upid, nil
+}

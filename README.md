@@ -28,6 +28,8 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 | `create_vm_snapshot` | Create a VM snapshot (returns task UPID) | `node`, `vmid`, `snapname`, `description` (optional) |
 | `rollback_vm_snapshot` | Roll back a VM to a snapshot (returns task UPID) | `node`, `vmid`, `snapname` |
 | `delete_vm_snapshot` | Delete a VM snapshot (returns task UPID) | `node`, `vmid`, `snapname` |
+| `create_vm` | Create a new QEMU VM (returns task UPID) | `node`, `vmid`, `name`, `memory`, `cores`, `iso`, `disk`, `net0`, `start` (optional) |
+| `clone_vm` | Clone a VM to a new ID (returns task UPID) | `node`, `vmid`, `newid`, `name`, `target_node` (optional) |
 
 ### LXC Containers
 
@@ -43,6 +45,8 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 | `create_container_snapshot` | Create a container snapshot (returns task UPID) | `node`, `vmid`, `snapname`, `description` (optional) |
 | `rollback_container_snapshot` | Roll back a container to a snapshot (returns task UPID) | `node`, `vmid`, `snapname` |
 | `delete_container_snapshot` | Delete a container snapshot (returns task UPID) | `node`, `vmid`, `snapname` |
+| `create_container` | Create a new LXC container (returns task UPID) | `node`, `vmid`, `ostemplate`, `hostname`, `memory`, `rootfs`, `password`, `net0`, `start` (optional) |
+| `clone_container` | Clone a container to a new ID (returns task UPID) | `node`, `vmid`, `newid`, `hostname`, `target_node` (optional) |
 
 ### Tasks
 
