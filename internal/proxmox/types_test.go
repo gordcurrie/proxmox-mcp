@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
 	"testing"
 )
 
@@ -89,8 +90,8 @@ func TestSensitiveString_Redaction(t *testing.T) {
 		}
 		// %#v must not contain the secret
 		verbose := fmt.Sprintf("%#v", s)
-		if verbose == secret {
-			t.Errorf("%%#v leaked secret value")
+		if strings.Contains(verbose, secret) {
+			t.Errorf("%%#v leaked secret value: %s", verbose)
 		}
 	})
 

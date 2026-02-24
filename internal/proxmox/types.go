@@ -152,7 +152,8 @@ type CreateContainerSnapshotRequest struct {
 }
 
 // CreateVMRequest is the request body for POST /nodes/{node}/qemu.
-// Fields map directly to Proxmox API parameters. Zero values are omitted.
+// Required fields (vmid) are always included; optional fields use omitempty
+// and are omitted when zero-valued.
 type CreateVMRequest struct {
 	VMID   int    `json:"vmid"`
 	Name   string `json:"name,omitempty"`
@@ -174,7 +175,8 @@ type CloneVMRequest struct {
 }
 
 // CreateContainerRequest is the request body for POST /nodes/{node}/lxc.
-// Fields map directly to Proxmox API parameters. Zero values are omitted.
+// Required fields (vmid, ostemplate) are always included; optional fields use
+// omitempty and are omitted when zero-valued.
 type CreateContainerRequest struct {
 	VMID       int             `json:"vmid"`
 	OSTemplate string          `json:"ostemplate"` // e.g. "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst"
