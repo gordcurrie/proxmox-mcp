@@ -1,6 +1,10 @@
 package proxmox
 
 import (
+	"encoding/json"
+	"fmt"
+	"log/slog"
+	"strings"
 	"testing"
 )
 
@@ -66,4 +70,76 @@ func TestItoa(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSensitiveString_Redaction(t *testing.T) {
+	t.Parallel()
+
+	const secret = "s3cr3t-p@ssw0rd"
+	s := SensitiveString(secret)
+
+	t.Run("String() redacts", func(t *testing.T) {
+		if got := s.String(); got != "[REDACTED]" {
+			t.Errorf("String() = %q, want \"[REDACTED]\"", got)
+		}
+	})
+
+	t.Run("GoString() redacts", func(t *testing.T) {
+		if got := s.GoString(); got != "[REDACTED]" {
+			t.Errorf("GoString() = %q, want \"[REDACTED]\"", got)
+		}
+		// %#v must not contain the secret
+		verbose := fmt.Sprintf("%#v", s)
+		if strings.Contains(verbose, secret) {
+			t.Errorf("%%#v leaked secret value: %s", verbose)
+		}
+	})
+
+	t.Run("LogValue() redacts", func(t *testing.T) {
+		got := s.LogValue()
+		want := slog.StringValue("[REDACTED]")
+		if !got.Equal(want) {
+			t.Errorf("LogValue() = %v, want %v", got, want)
+		}
+	})
+}
+
+func TestSensitiveString_JSON(t *testing.T) {
+	t.Parallel()
+
+	const secret = "s3cr3t-p@ssw0rd"
+	s := SensitiveString(secret)
+
+	t.Run("MarshalJSON emits real value", func(t *testing.T) {
+		data, err := json.Marshal(s)
+		if err != nil {
+			t.Fatalf("MarshalJSON: %v", err)
+		}
+		// json.Marshal of a plain string would give `"s3cr3t-p@ssw0rd"` (quoted)
+		want := `"` + secret + `"`
+		if string(data) != want {
+			t.Errorf("MarshalJSON = %s, want %s", data, want)
+		}
+	})
+
+	t.Run("UnmarshalJSON round-trips", func(t *testing.T) {
+		data, err := json.Marshal(s)
+		if err != nil {
+			t.Fatalf("MarshalJSON: %v", err)
+		}
+		var got SensitiveString
+		if err := json.Unmarshal(data, &got); err != nil {
+			t.Fatalf("UnmarshalJSON: %v", err)
+		}
+		if string(got) != secret {
+			t.Errorf("round-trip got %q, want %q", string(got), secret)
+		}
+	})
+
+	t.Run("UnmarshalJSON rejects non-string", func(t *testing.T) {
+		var got SensitiveString
+		if err := json.Unmarshal([]byte(`123`), &got); err == nil {
+			t.Error("expected error unmarshalling number, got nil")
+		}
+	})
 }

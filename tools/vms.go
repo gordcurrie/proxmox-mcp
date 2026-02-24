@@ -105,4 +105,63 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		return taskResult(upid)
 	})
+
+	type createVMInput struct {
+		Node   string `json:"node"           jsonschema:"node to create the VM on"`
+		VMID   int    `json:"vmid"           jsonschema:"numeric VM ID (must not already exist)"`
+		Name   string `json:"name,omitempty" jsonschema:"VM name"`
+		Memory int    `json:"memory,omitempty" jsonschema:"memory in MB (e.g. 512)"`
+		Cores  int    `json:"cores,omitempty"  jsonschema:"number of CPU cores"`
+		ISO    string `json:"iso,omitempty"    jsonschema:"ISO drive in Proxmox format: storage:iso/file.iso,media=cdrom"`
+		Disk   string `json:"disk,omitempty"   jsonschema:"primary disk in Proxmox format: storage:size_in_gb e.g. local-lvm:32"`
+		Net0   string `json:"net0,omitempty"   jsonschema:"network device e.g. virtio,bridge=vmbr0"`
+		Start  bool   `json:"start,omitempty"  jsonschema:"start the VM after creation"`
+	}
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "create_vm",
+		Description: "Create a new QEMU VM. Returns the async task ID. Use get_task_status to poll for completion.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input createVMInput) (*mcp.CallToolResult, any, error) {
+		start := 0
+		if input.Start {
+			start = 1
+		}
+		req := proxmox.CreateVMRequest{
+			VMID:   input.VMID,
+			Name:   input.Name,
+			Memory: input.Memory,
+			Cores:  input.Cores,
+			IDE2:   input.ISO,
+			SCSI0:  input.Disk,
+			Net0:   input.Net0,
+			Start:  start,
+		}
+		upid, err := client.CreateVM(ctx, input.Node, &req)
+		if err != nil {
+			return nil, nil, fmt.Errorf("create_vm: %w", err)
+		}
+		return taskResult(upid)
+	})
+
+	type cloneVMInput struct {
+		Node       string `json:"node"                  jsonschema:"node the source VM is on"`
+		VMID       int    `json:"vmid"                  jsonschema:"source VM ID"`
+		NewID      int    `json:"newid"                 jsonschema:"ID for the new VM"`
+		Name       string `json:"name,omitempty"        jsonschema:"name for the new VM"`
+		TargetNode string `json:"target_node,omitempty" jsonschema:"target node (defaults to source node)"`
+	}
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "clone_vm",
+		Description: "Clone a QEMU VM to a new VM ID. Returns the async task ID. Use get_task_status to poll for completion.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input cloneVMInput) (*mcp.CallToolResult, any, error) {
+		req := proxmox.CloneVMRequest{
+			NewID:  input.NewID,
+			Name:   input.Name,
+			Target: input.TargetNode,
+		}
+		upid, err := client.CloneVM(ctx, input.Node, input.VMID, &req)
+		if err != nil {
+			return nil, nil, fmt.Errorf("clone_vm: %w", err)
+		}
+		return taskResult(upid)
+	})
 }

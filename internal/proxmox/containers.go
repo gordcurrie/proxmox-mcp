@@ -2,14 +2,16 @@ package proxmox
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/url"
 	"strconv"
 )
 
 // ListContainers returns all LXC containers on the specified node.
 func (c *Client) ListContainers(ctx context.Context, node string) ([]Container, error) {
 	var containers []Container
-	if err := c.get(ctx, "/nodes/"+node+"/lxc", &containers); err != nil {
+	if err := c.get(ctx, "/nodes/"+url.PathEscape(node)+"/lxc", &containers); err != nil {
 		return nil, fmt.Errorf("listing containers on node %s: %w", node, err)
 	}
 	return containers, nil
@@ -20,7 +22,7 @@ func (c *Client) ListContainers(ctx context.Context, node string) ([]Container, 
 // /nodes/{node}/lxc/{vmid}/status/current.
 func (c *Client) GetContainerStatus(ctx context.Context, node string, vmid int) (map[string]any, error) {
 	var status map[string]any
-	path := "/nodes/" + node + "/lxc/" + strconv.Itoa(vmid) + "/status/current"
+	path := "/nodes/" + url.PathEscape(node) + "/lxc/" + strconv.Itoa(vmid) + "/status/current"
 	if err := c.get(ctx, path, &status); err != nil {
 		return nil, fmt.Errorf("getting status for container %d on node %s: %w", vmid, node, err)
 	}
@@ -31,7 +33,7 @@ func (c *Client) GetContainerStatus(ctx context.Context, node string, vmid int) 
 // asynchronous task.
 func (c *Client) StartContainer(ctx context.Context, node string, vmid int) (string, error) {
 	var upid string
-	path := "/nodes/" + node + "/lxc/" + strconv.Itoa(vmid) + "/status/start"
+	path := "/nodes/" + url.PathEscape(node) + "/lxc/" + strconv.Itoa(vmid) + "/status/start"
 	if err := c.post(ctx, path, &upid); err != nil {
 		return "", fmt.Errorf("starting container %d on node %s: %w", vmid, node, err)
 	}
@@ -42,7 +44,7 @@ func (c *Client) StartContainer(ctx context.Context, node string, vmid int) (str
 // asynchronous task.
 func (c *Client) StopContainer(ctx context.Context, node string, vmid int) (string, error) {
 	var upid string
-	path := "/nodes/" + node + "/lxc/" + strconv.Itoa(vmid) + "/status/stop"
+	path := "/nodes/" + url.PathEscape(node) + "/lxc/" + strconv.Itoa(vmid) + "/status/stop"
 	if err := c.post(ctx, path, &upid); err != nil {
 		return "", fmt.Errorf("stopping container %d on node %s: %w", vmid, node, err)
 	}
@@ -53,7 +55,7 @@ func (c *Client) StopContainer(ctx context.Context, node string, vmid int) (stri
 // It returns the UPID of the asynchronous task.
 func (c *Client) ShutdownContainer(ctx context.Context, node string, vmid int) (string, error) {
 	var upid string
-	path := "/nodes/" + node + "/lxc/" + strconv.Itoa(vmid) + "/status/shutdown"
+	path := "/nodes/" + url.PathEscape(node) + "/lxc/" + strconv.Itoa(vmid) + "/status/shutdown"
 	if err := c.post(ctx, path, &upid); err != nil {
 		return "", fmt.Errorf("shutting down container %d on node %s: %w", vmid, node, err)
 	}
@@ -64,7 +66,7 @@ func (c *Client) ShutdownContainer(ctx context.Context, node string, vmid int) (
 // asynchronous task.
 func (c *Client) RebootContainer(ctx context.Context, node string, vmid int) (string, error) {
 	var upid string
-	path := "/nodes/" + node + "/lxc/" + strconv.Itoa(vmid) + "/status/reboot"
+	path := "/nodes/" + url.PathEscape(node) + "/lxc/" + strconv.Itoa(vmid) + "/status/reboot"
 	if err := c.post(ctx, path, &upid); err != nil {
 		return "", fmt.Errorf("rebooting container %d on node %s: %w", vmid, node, err)
 	}
@@ -76,12 +78,40 @@ func (c *Client) RebootContainer(ctx context.Context, node string, vmid int) (st
 // The container must be stopped before deletion.
 func (c *Client) DeleteContainer(ctx context.Context, node string, vmid int, purge bool) (string, error) {
 	var upid string
-	path := "/nodes/" + node + "/lxc/" + strconv.Itoa(vmid)
+	path := "/nodes/" + url.PathEscape(node) + "/lxc/" + strconv.Itoa(vmid)
 	if purge {
 		path += "?purge=1"
 	}
 	if err := c.delete(ctx, path, &upid); err != nil {
 		return "", fmt.Errorf("deleting container %d on node %s: %w", vmid, node, err)
+	}
+	return upid, nil
+}
+
+// CreateContainer creates a new LXC container on the specified node. It returns
+// the UPID of the asynchronous task.
+func (c *Client) CreateContainer(ctx context.Context, node string, req *CreateContainerRequest) (string, error) {
+	if req == nil {
+		return "", errors.New("CreateContainer: req must not be nil")
+	}
+	var upid string
+	path := "/nodes/" + url.PathEscape(node) + "/lxc"
+	if err := c.postWithBody(ctx, path, req, &upid); err != nil {
+		return "", fmt.Errorf("creating container %d on node %s: %w", req.VMID, node, err)
+	}
+	return upid, nil
+}
+
+// CloneContainer clones an existing LXC container to a new container ID. It
+// returns the UPID of the asynchronous task.
+func (c *Client) CloneContainer(ctx context.Context, node string, vmid int, req *CloneContainerRequest) (string, error) {
+	if req == nil {
+		return "", errors.New("CloneContainer: req must not be nil")
+	}
+	var upid string
+	path := "/nodes/" + url.PathEscape(node) + "/lxc/" + strconv.Itoa(vmid) + "/clone"
+	if err := c.postWithBody(ctx, path, req, &upid); err != nil {
+		return "", fmt.Errorf("cloning container %d on node %s: %w", vmid, node, err)
 	}
 	return upid, nil
 }

@@ -354,3 +354,85 @@ func TestDeleteVM_apiError(t *testing.T) {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
+
+func TestCreateVM_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "want POST", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/qemu" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, testUPID))
+	}))
+	defer srv.Close()
+
+	req := CreateVMRequest{VMID: 200, Name: "test-vm", Memory: 512, Cores: 1}
+	upid, err := newTestClient(t, srv.URL).CreateVM(context.Background(), "pve1", &req)
+	if err != nil {
+		t.Fatalf("CreateVM: %v", err)
+	}
+	if upid != testUPID {
+		t.Errorf("upid: got %q, want %q", upid, testUPID)
+	}
+}
+
+func TestCreateVM_apiError(t *testing.T) {
+	t.Parallel()
+	srv := vmErrorServer(t)
+	defer srv.Close()
+	_, err := newTestClient(t, srv.URL).CreateVM(context.Background(), "pve1", &CreateVMRequest{VMID: 200})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
+
+func TestCloneVM_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "want POST", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/qemu/100/clone" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, testUPID))
+	}))
+	defer srv.Close()
+
+	req := CloneVMRequest{NewID: 201, Name: "cloned-vm"}
+	upid, err := newTestClient(t, srv.URL).CloneVM(context.Background(), "pve1", 100, &req)
+	if err != nil {
+		t.Fatalf("CloneVM: %v", err)
+	}
+	if upid != testUPID {
+		t.Errorf("upid: got %q, want %q", upid, testUPID)
+	}
+}
+
+func TestCloneVM_apiError(t *testing.T) {
+	t.Parallel()
+	srv := vmErrorServer(t)
+	defer srv.Close()
+	_, err := newTestClient(t, srv.URL).CloneVM(context.Background(), "pve1", 100, &CloneVMRequest{NewID: 201})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
