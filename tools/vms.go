@@ -227,4 +227,27 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		return taskResult(upid)
 	})
+
+	type migrateVMInput struct {
+		Node   string `json:"node"             jsonschema:"source node the VM is currently on"`
+		VMID   int    `json:"vmid"             jsonschema:"numeric VM ID"`
+		Target string `json:"target"           jsonschema:"destination node name"`
+		Online bool   `json:"online,omitempty" jsonschema:"true for live migration (no guest downtime when QEMU guest agent is running)"`
+	}
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "migrate_vm",
+		Description: "Migrate a QEMU VM to another node. Returns the async task ID. Use get_task_status to poll for completion.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input migrateVMInput) (*mcp.CallToolResult, any, error) {
+		var online *int
+		if input.Online {
+			v := 1
+			online = &v
+		}
+		req := proxmox.MigrateVMRequest{Target: input.Target, Online: online}
+		upid, err := client.MigrateVM(ctx, input.Node, input.VMID, &req)
+		if err != nil {
+			return nil, nil, fmt.Errorf("migrate_vm: %w", err)
+		}
+		return taskResult(upid)
+	})
 }

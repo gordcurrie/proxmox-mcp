@@ -205,4 +205,27 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		return taskResult(upid)
 	})
+
+	type migrateContainerInput struct {
+		Node    string `json:"node"              jsonschema:"source node the container is currently on"`
+		VMID    int    `json:"vmid"              jsonschema:"numeric container ID"`
+		Target  string `json:"target"            jsonschema:"destination node name"`
+		Restart bool   `json:"restart,omitempty" jsonschema:"true to stop, migrate, and restart the container on the target node"`
+	}
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "migrate_container",
+		Description: "Migrate an LXC container to another node. Returns the async task ID. Use get_task_status to poll for completion.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input migrateContainerInput) (*mcp.CallToolResult, any, error) {
+		var restart *int
+		if input.Restart {
+			v := 1
+			restart = &v
+		}
+		req := proxmox.MigrateContainerRequest{Target: input.Target, Restart: restart}
+		upid, err := client.MigrateContainer(ctx, input.Node, input.VMID, &req)
+		if err != nil {
+			return nil, nil, fmt.Errorf("migrate_container: %w", err)
+		}
+		return taskResult(upid)
+	})
 }

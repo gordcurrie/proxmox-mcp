@@ -174,3 +174,18 @@ func (c *Client) ResizeVMDisk(ctx context.Context, node string, vmid int, req *R
 	}
 	return upid, nil
 }
+
+// MigrateVM migrates a QEMU VM to another node. It returns the UPID of the
+// asynchronous task. Set req.Online = true for live migration (no guest
+// downtime when QEMU guest agent is running).
+func (c *Client) MigrateVM(ctx context.Context, node string, vmid int, req *MigrateVMRequest) (string, error) {
+	if req == nil {
+		return "", errors.New("MigrateVM: req must not be nil")
+	}
+	var upid string
+	path := "/nodes/" + url.PathEscape(node) + "/qemu/" + strconv.Itoa(vmid) + "/migrate"
+	if err := c.postWithBody(ctx, path, req, &upid); err != nil {
+		return "", fmt.Errorf("migrating VM %d from node %s to %s: %w", vmid, node, req.Target, err)
+	}
+	return upid, nil
+}

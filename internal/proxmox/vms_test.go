@@ -600,3 +600,63 @@ func TestResizeVMDisk_apiError(t *testing.T) {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
+
+func TestMigrateVM_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "want POST", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/qemu/100/migrate" {
+			http.NotFound(w, r)
+			return
+		}
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "read body", http.StatusInternalServerError)
+			return
+		}
+		var payload map[string]any
+		if err := json.Unmarshal(body, &payload); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		if payload["target"] != "pve2" {
+			http.Error(w, "wrong target", http.StatusBadRequest)
+			return
+		}
+		if payload["online"] != float64(1) {
+			http.Error(w, "online should be 1", http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, testUPID))
+	}))
+	defer srv.Close()
+
+	online := 1
+	req := MigrateVMRequest{Target: "pve2", Online: &online}
+	upid, err := newTestClient(t, srv.URL).MigrateVM(context.Background(), "pve1", 100, &req)
+	if err != nil {
+		t.Fatalf("MigrateVM: %v", err)
+	}
+	if upid != testUPID {
+		t.Errorf("upid: got %q, want %q", upid, testUPID)
+	}
+}
+
+func TestMigrateVM_apiError(t *testing.T) {
+	t.Parallel()
+	srv := vmErrorServer(t)
+	defer srv.Close()
+	_, err := newTestClient(t, srv.URL).MigrateVM(context.Background(), "pve1", 100, &MigrateVMRequest{Target: "pve2"})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}

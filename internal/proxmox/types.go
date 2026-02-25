@@ -223,6 +223,18 @@ type ResizeDiskRequest struct {
 	Size string `json:"size"` // absolute (e.g. "50G") or relative increment (e.g. "+10G")
 }
 
+// MigrateVMRequest is the request body for POST /nodes/{node}/qemu/{vmid}/migrate.
+type MigrateVMRequest struct {
+	Target string `json:"target"`           // destination node name
+	Online *int   `json:"online,omitempty"` // nil = omit; 1 = live migration (no guest downtime when supported)
+}
+
+// MigrateContainerRequest is the request body for POST /nodes/{node}/lxc/{vmid}/migrate.
+type MigrateContainerRequest struct {
+	Target  string `json:"target"`            // destination node name
+	Restart *int   `json:"restart,omitempty"` // nil = omit; 1 = stop, migrate, restart on target
+}
+
 // APIError represents an HTTP-level error returned by the Proxmox API.
 type APIError struct {
 	StatusCode int

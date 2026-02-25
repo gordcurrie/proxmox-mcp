@@ -155,3 +155,18 @@ func (c *Client) ResizeContainerDisk(ctx context.Context, node string, vmid int,
 	}
 	return upid, nil
 }
+
+// MigrateContainer migrates an LXC container to another node. It returns the
+// UPID of the asynchronous task. Set req.Restart = true to stop the container,
+// migrate it, and restart it on the target node.
+func (c *Client) MigrateContainer(ctx context.Context, node string, vmid int, req *MigrateContainerRequest) (string, error) {
+	if req == nil {
+		return "", errors.New("MigrateContainer: req must not be nil")
+	}
+	var upid string
+	path := "/nodes/" + url.PathEscape(node) + "/lxc/" + strconv.Itoa(vmid) + "/migrate"
+	if err := c.postWithBody(ctx, path, req, &upid); err != nil {
+		return "", fmt.Errorf("migrating container %d from node %s to %s: %w", vmid, node, req.Target, err)
+	}
+	return upid, nil
+}

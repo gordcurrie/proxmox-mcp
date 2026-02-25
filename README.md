@@ -37,6 +37,7 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 | `clone_vm` | Clone a VM to a new ID (returns task UPID) | `node`, `vmid`, `newid`, `name` (optional), `target_node` (optional) |
 | `set_vm_config` | Update VM config (sync, no task) | `node`, `vmid`, `name` (optional), `memory` (optional), `cores` (optional), `onboot` (optional), `description` (optional) |
 | `resize_vm_disk` | Resize a VM disk (returns task UPID) | `node`, `vmid`, `disk` (e.g. `scsi0`), `size` (e.g. `+10G` or `50G`) |
+| `migrate_vm` | Migrate a VM to another node (returns task UPID) | `node`, `vmid`, `target`, `online` (optional, live migrate) |
 
 ### LXC Containers
 
@@ -57,6 +58,7 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 | `clone_container` | Clone a container to a new ID (returns task UPID) | `node`, `vmid`, `newid`, `hostname` (optional), `target_node` (optional) |
 | `set_container_config` | Update container config (sync, no task) | `node`, `vmid`, `hostname` (optional), `memory` (optional), `swap` (optional), `onboot` (optional), `description` (optional) |
 | `resize_container_disk` | Resize a container disk (returns task UPID) | `node`, `vmid`, `disk` (e.g. `rootfs`), `size` (e.g. `+5G` or `10G`) |
+| `migrate_container` | Migrate a container to another node (returns task UPID) | `node`, `vmid`, `target`, `restart` (optional, stop+migrate+start) |
 
 ### Tasks
 
