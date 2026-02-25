@@ -22,23 +22,19 @@ func registerNodeTools(s *mcp.Server, client *proxmox.Client) {
 		return jsonResult(nodes)
 	})
 
-	type getNodeStatusInput struct {
+	type nodeInput struct {
 		Node string `json:"node" jsonschema:"name of the node (e.g. pve)"`
 	}
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_node_status",
 		Description: "Get detailed status of a specific Proxmox node.",
-	}, func(ctx context.Context, _ *mcp.CallToolRequest, input getNodeStatusInput) (*mcp.CallToolResult, any, error) {
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input nodeInput) (*mcp.CallToolResult, any, error) {
 		status, err := client.GetNodeStatus(ctx, input.Node)
 		if err != nil {
 			return nil, nil, fmt.Errorf("get_node_status: %w", err)
 		}
 		return jsonResult(status)
 	})
-
-	type nodeInput struct {
-		Node string `json:"node" jsonschema:"name of the node"`
-	}
 
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "list_node_storage",
