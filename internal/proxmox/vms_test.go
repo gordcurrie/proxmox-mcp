@@ -613,12 +613,31 @@ func TestMigrateVM_success(t *testing.T) {
 			http.NotFound(w, r)
 			return
 		}
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "read body", http.StatusInternalServerError)
+			return
+		}
+		var payload map[string]any
+		if err := json.Unmarshal(body, &payload); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		if payload["target"] != "pve2" {
+			http.Error(w, "wrong target", http.StatusBadRequest)
+			return
+		}
+		if payload["online"] != float64(1) {
+			http.Error(w, "online should be 1", http.StatusBadRequest)
+			return
+		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(jsonEnvelope(t, testUPID))
 	}))
 	defer srv.Close()
 
-	req := MigrateVMRequest{Target: "pve2", Online: true}
+	online := 1
+	req := MigrateVMRequest{Target: "pve2", Online: &online}
 	upid, err := newTestClient(t, srv.URL).MigrateVM(context.Background(), "pve1", 100, &req)
 	if err != nil {
 		t.Fatalf("MigrateVM: %v", err)

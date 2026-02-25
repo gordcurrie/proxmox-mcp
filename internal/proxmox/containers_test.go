@@ -565,12 +565,31 @@ func TestMigrateContainer_success(t *testing.T) {
 			http.NotFound(w, r)
 			return
 		}
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "read body", http.StatusInternalServerError)
+			return
+		}
+		var payload map[string]any
+		if err := json.Unmarshal(body, &payload); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		if payload["target"] != "pve2" {
+			http.Error(w, "wrong target", http.StatusBadRequest)
+			return
+		}
+		if payload["restart"] != float64(1) {
+			http.Error(w, "restart should be 1", http.StatusBadRequest)
+			return
+		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(jsonEnvelope(t, ctUPID))
 	}))
 	defer srv.Close()
 
-	req := MigrateContainerRequest{Target: "pve2", Restart: true}
+	restart := 1
+	req := MigrateContainerRequest{Target: "pve2", Restart: &restart}
 	upid, err := newTestClient(t, srv.URL).MigrateContainer(context.Background(), "pve1", 200, &req)
 	if err != nil {
 		t.Fatalf("MigrateContainer: %v", err)

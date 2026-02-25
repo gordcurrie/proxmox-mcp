@@ -216,7 +216,12 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 		Name:        "migrate_container",
 		Description: "Migrate an LXC container to another node. Returns the async task ID. Use get_task_status to poll for completion.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input migrateContainerInput) (*mcp.CallToolResult, any, error) {
-		req := proxmox.MigrateContainerRequest{Target: input.Target, Restart: input.Restart}
+		var restart *int
+		if input.Restart {
+			v := 1
+			restart = &v
+		}
+		req := proxmox.MigrateContainerRequest{Target: input.Target, Restart: restart}
 		upid, err := client.MigrateContainer(ctx, input.Node, input.VMID, &req)
 		if err != nil {
 			return nil, nil, fmt.Errorf("migrate_container: %w", err)

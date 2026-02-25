@@ -238,7 +238,12 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 		Name:        "migrate_vm",
 		Description: "Migrate a QEMU VM to another node. Returns the async task ID. Use get_task_status to poll for completion.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input migrateVMInput) (*mcp.CallToolResult, any, error) {
-		req := proxmox.MigrateVMRequest{Target: input.Target, Online: input.Online}
+		var online *int
+		if input.Online {
+			v := 1
+			online = &v
+		}
+		req := proxmox.MigrateVMRequest{Target: input.Target, Online: online}
 		upid, err := client.MigrateVM(ctx, input.Node, input.VMID, &req)
 		if err != nil {
 			return nil, nil, fmt.Errorf("migrate_vm: %w", err)
