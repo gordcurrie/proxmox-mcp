@@ -33,18 +33,24 @@ proxmox_mcp/
 │       ├── client.go         # custom HTTP client (auth, TLS, base URL)
 │       ├── client_test.go    # httptest-based unit tests
 │       ├── types.go          # shared Proxmox response/request structs
+│       ├── cluster.go        # cluster-wide API calls
 │       ├── nodes.go          # node-related API calls
 │       ├── vms.go            # QEMU VM API calls
 │       ├── containers.go     # LXC container API calls
-│       └── tasks.go          # task polling (UPID → status)
+│       ├── snapshots.go      # snapshot API calls
+│       ├── tasks.go          # task polling (UPID → status)
+│       ├── storage.go        # storage content API calls (Phase 3)
+│       └── backup.go         # backup/vzdump API calls (Phase 3)
 ├── tools/
 │   ├── register.go           # RegisterAll(cfg Config) wires all tools onto the MCP server
+│   ├── cluster.go            # cluster-wide MCP tools
 │   ├── nodes.go              # node MCP tools
 │   ├── vms.go                # VM MCP tools
 │   ├── containers.go         # container MCP tools
-│   ├── cluster.go            # cluster-wide MCP tools
-│   ├── snapshots.go          # snapshot MCP tools (list/create/rollback/delete)
-│   └── destructive.go        # delete_vm, delete_container (opt-in via Config.AllowDestructive)
+│   ├── snapshots.go          # snapshot MCP tools
+│   ├── destructive.go        # delete_vm, delete_container (opt-in via Config.AllowDestructive)
+│   ├── storage.go            # storage content MCP tools (Phase 3)
+│   └── backup.go             # backup MCP tools (Phase 3)
 ├── .golangci.yml             # linter config
 ├── Makefile                  # quality gate targets
 ├── go.mod
@@ -127,103 +133,116 @@ separately.
 
 ---
 
-## Phase 2 — Full CRUD, Snapshots, Parity, Depth (target: v0.2.0)
+## Phase 2 — Full CRUD, Snapshots, Parity, Depth ✅ shipped (v0.2.0)
 
-Delivered across 6 PRs in strict dependency order. Each PR must pass `make check` and CI
-before merge. Final tool count: **38 tools** (13 existing + 25 new).
+6 PRs merged (#2–#7). Final tool count: **38 tools**.
 
-### PR 1 — Client foundations: `postWithBody`, `delete`, `put`
+| PR | Tools added | Key changes |
+|---|---|---|
+| #2 — client foundations | — | `postWithBody`, `delete`, `put` in `client.go` |
+| #3 — lifecycle parity | `reboot_vm`, `suspend_vm`, `resume_vm`, `shutdown_container`, `reboot_container` | uses `post()` |
+| #4 — snapshots | `list/create/rollback/delete` × VM + container (8 tools) | `snapshots.go`, `tools/snapshots.go` |
+| #5 — delete operations | `delete_vm`, `delete_container` | `tools/destructive.go`; 3-layer safety gate; `PROXMOX_ALLOW_DESTRUCTIVE` env var |
+| #6 — create & clone | `create_vm`, `clone_vm`, `create_container`, `clone_container` | `SensitiveString` type for password redaction |
+| #7 — node/cluster depth | `get_cluster_status`, `list_node_storage`, `list_node_tasks`, `get_node_disks`, `get_vm_config`, `get_container_config` | read-only; no new HTTP primitives |
 
-Extends `internal/proxmox/client.go` with three new private methods. No new tools — pure
-client layer that all subsequent PRs depend on.
+---
 
-- `postWithBody(ctx, path string, body, result any) error` — marshals body to JSON, sets
-  `Content-Type: application/json`. Required for create/clone/snapshot/migrate.
-- `delete(ctx, path string, result any) error` — sends DELETE. Required for
-  delete VM/container/snapshot.
-- `put(ctx, path string, body, result any) error` — sends PUT with JSON body. Required for
-  `set_vm_config` / `set_container_config` (Phase 3+).
+## Phase 3 — Config mutation, migration, storage content, backup (target: v0.3.0)
 
-All three covered by `httptest`-based unit tests in `client_test.go`.
+Builds on the `put` and `postWithBody` client methods already in place from Phase 2 PR #2.
+Delivered across 4 PRs. Each must pass `make check` before merge.
 
-### PR 2 — Lifecycle parity (5 new tools)
+### PR 7 — Config mutation (4 new tools)
 
-Uses existing `post()` — no client changes needed.
+Uses the existing `put()` client method — no new HTTP primitives needed.
+Proxmox exposes a sync (`PUT`) and async (`POST`) variant for config; we use `PUT` here so
+the result is immediate and no task polling is required.
 
-| Tool | API endpoint |
-|---|---|
-| `reboot_vm` | `POST /nodes/{node}/qemu/{vmid}/status/reboot` |
-| `suspend_vm` | `POST /nodes/{node}/qemu/{vmid}/status/suspend` |
-| `resume_vm` | `POST /nodes/{node}/qemu/{vmid}/status/resume` |
-| `shutdown_container` | `POST /nodes/{node}/lxc/{vmid}/status/shutdown` |
-| `reboot_container` | `POST /nodes/{node}/lxc/{vmid}/status/reboot` |
+New request structs `SetVMConfigRequest` and `SetContainerConfigRequest` in `types.go`.
+Both expose a focused, safe subset of mutable fields — not a free-form map — to prevent
+accidental misconfiguration. Fields use `omitempty` so callers only send what they intend to
+change. Client methods take request structs by pointer (gocritic `hugeParam`).
 
-All return a task ID via `taskResult(upid)`.
+Resize operations use a separate `PUT` endpoint that takes `disk` + `size` params; they
+return a task UPID (async). New `ResizeDiskRequest` struct.
 
-### PR 3 — Snapshots (8 new tools)
+| Tool | API endpoint | Params |
+|---|---|---|
+| `set_vm_config` | `PUT /nodes/{node}/qemu/{vmid}/config` | `node`, `vmid`, `memory`, `cores`, `name`, `onboot`, `description` |
+| `set_container_config` | `PUT /nodes/{node}/lxc/{vmid}/config` | `node`, `vmid`, `memory`, `swap`, `hostname`, `onboot`, `description` |
+| `resize_vm_disk` | `PUT /nodes/{node}/qemu/{vmid}/resize` | `node`, `vmid`, `disk` (e.g. `scsi0`), `size` (e.g. `+10G` or `50G`) |
+| `resize_container_disk` | `PUT /nodes/{node}/lxc/{vmid}/resize` | `node`, `vmid`, `disk` (e.g. `rootfs`), `size` |
 
-Depends on PR 1 (`postWithBody` for create, `delete` for delete).
-New file `internal/proxmox/snapshots.go`. New `Snapshot` struct in `types.go`.
-New file `tools/snapshots.go`. `RegisterAll` gains `registerSnapshotTools`.
+`resize_vm_disk` and `resize_container_disk` return task UPIDs — use `get_task_status` to
+poll for completion.
 
-| Tool | Params |
-|---|---|
-| `list_vm_snapshots` | `node`, `vmid` |
-| `create_vm_snapshot` | `node`, `vmid`, `name`, `description`, `include_ram` |
-| `rollback_vm_snapshot` | `node`, `vmid`, `snapname` |
-| `delete_vm_snapshot` | `node`, `vmid`, `snapname` |
-| `list_container_snapshots` | `node`, `vmid` |
-| `create_container_snapshot` | `node`, `vmid`, `name`, `description` |
-| `rollback_container_snapshot` | `node`, `vmid`, `snapname` |
-| `delete_container_snapshot` | `node`, `vmid`, `snapname` |
+Tests: success + apiError for all four client methods (8 new tests). `set_vm_config` and
+`set_container_config` additionally test that `omitempty` fields are omitted from the request
+body.
 
-### PR 4 — Delete operations (2 new tools)
+### PR 8 — Migration (2 new tools)
 
-Depends on PR 1 (`delete()` client method).
-`purge` defaults to `false` — disks are kept unless explicitly set to `true`.
+Uses existing `postWithBody` — no new HTTP primitives needed.
+Both tools return a task UPID immediately (non-blocking).
 
-**Safety design — 3 layers:**
-1. **Operator gate** — `PROXMOX_ALLOW_DESTRUCTIVE=true` required to register the tools at all. `tools.RegisterAll` accepts a `tools.Config{AllowDestructive bool}` struct; tools remain invisible to the MCP client unless opted in.
-2. **`DestructiveHint: true` annotation** — signals MCP clients to present confirmation UI before calling.
-3. **`confirmed: true` required field** — tool handler returns an error if `confirmed` is not explicitly set to `true`; the model must reason about the action before proceeding.
+New `MigrateVMRequest` and `MigrateContainerRequest` structs in `types.go`. Client methods
+in `vms.go` and `containers.go` respectively.
 
-New file `tools/destructive.go`. `tools.Config` struct added to `tools/register.go`. `RegisterAll` signature updated to accept `Config`.
+| Tool | API endpoint | Params |
+|---|---|---|
+| `migrate_vm` | `POST /nodes/{node}/qemu/{vmid}/migrate` | `node`, `vmid`, `target` (destination node), `online` (bool, live migrate) |
+| `migrate_container` | `POST /nodes/{node}/lxc/{vmid}/migrate` | `node`, `vmid`, `target`, `restart` (bool) |
 
-| Tool | Params |
-|---|---|
-| `delete_vm` | `node`, `vmid`, `confirmed` (must be `true`), `purge` (bool, default false) |
-| `delete_container` | `node`, `vmid`, `confirmed` (must be `true`), `purge` (bool, default false) |
+`online: true` performs a live migration for VMs (no guest downtime when supported).
+`restart: true` for containers stops, migrates, and restarts the container on the target node.
 
-### PR 5 — Create and clone (4 new tools)
+Tests: success + apiError for both client methods (4 new tests).
 
-Depends on PR 1 (`postWithBody`). New request structs `CreateVMRequest`, `CloneVMRequest`,
-`CreateContainerRequest`, and `CloneContainerRequest` in `types.go` expose a focused subset
-of Proxmox config options. Client methods take request structs by pointer (gocritic hugeParam).
+### PR 9 — Storage content (3 new tools)
 
-New `SensitiveString` type in `types.go`: redacts value from `fmt` and `slog` output via
-`fmt.Stringer` and `slog.LogValuer`, but marshals the real value to JSON for API calls.
-`CreateContainerRequest.Password` uses `SensitiveString` — no `//nolint` directives needed.
-`SensitiveString` also implements `json.Unmarshaler` so it works directly as an MCP input field.
+Uses existing `get()` for listing and the existing `delete()` method for removal.
+New file `internal/proxmox/storage.go`. New file `tools/storage.go`.
+`RegisterAll` gains `registerStorageTools`.
 
-| Tool | Params |
-|---|---|
-| `create_vm` | `node`, `vmid`, `name`, `memory`, `cores`, `iso`, `disk`, `net0`, `start` |
-| `clone_vm` | `node`, `vmid`, `newid`, `name`, `target_node` |
-| `create_container` | `node`, `vmid`, `ostemplate`, `hostname`, `memory`, `rootfs`, `password`, `net0`, `start` |
-| `clone_container` | `node`, `vmid`, `newid`, `hostname`, `target_node` |
+`delete_storage_content` is gated behind `PROXMOX_ALLOW_DESTRUCTIVE` and follows the same
+3-layer safety pattern as `delete_vm`/`delete_container` (operator env var + `confirmed`
+field + `DestructiveHint`).
 
-### PR 6 — Node and cluster depth (6 new tools) ✅ shipped
+| Tool | API endpoint | Params |
+|---|---|---|
+| `list_storage_content` | `GET /nodes/{node}/storage/{storage}/content` | `node`, `storage`, `content` (optional filter: `iso`, `vztmpl`, `backup`, `images`) |
+| `get_storage_content_info` | `GET /nodes/{node}/storage/{storage}/content/{volume}` | `node`, `storage`, `volume` (volid, e.g. `local:iso/debian.iso`) |
+| `delete_storage_content` | `DELETE /nodes/{node}/storage/{storage}/content/{volume}` | `node`, `storage`, `volume`, `confirmed` (must be `true`) |
 
-Read-only tools using existing `get()`. No new HTTP primitives needed.
+`list_storage_content` is the primary discovery tool for ISOs and container templates —
+needed to populate valid values for `create_vm` and `create_container`.
 
-| Tool | API endpoint |
-|---|---|
-| `get_cluster_status` | `GET /cluster/status` |
-| `list_node_storage` | `GET /nodes/{node}/storage` |
-| `list_node_tasks` | `GET /nodes/{node}/tasks` (params: `node`, `limit`) |
-| `get_node_disks` | `GET /nodes/{node}/disks/list` |
-| `get_vm_config` | `GET /nodes/{node}/qemu/{vmid}/config` |
-| `get_container_config` | `GET /nodes/{node}/lxc/{vmid}/config` |
+Tests: success + notFound for `list_storage_content` and `get_storage_content_info`;
+success + apiError for `delete_storage_content` (5 new tests).
+
+### PR 10 — Backup (2 new tools)
+
+Uses existing `postWithBody` and `get()` — no new HTTP primitives needed.
+New `CreateBackupRequest` struct in `types.go`. Client methods in a new
+`internal/proxmox/backup.go`. New `tools/backup.go`. `RegisterAll` gains
+`registerBackupTools`.
+
+`create_backup` is async — returns a task UPID to poll with `get_task_status`.
+`list_backups` is a convenience wrapper around `list_storage_content` filtered to
+`content=backup`; it can be implemented as a dedicated client method or by reusing the
+storage content client from PR 9.
+
+| Tool | API endpoint | Params |
+|---|---|---|
+| `create_backup` | `POST /nodes/{node}/vzdump` | `node`, `vmid`, `storage`, `mode` (`snapshot`/`suspend`/`stop`, default `snapshot`), `compress` (`0`/`gzip`/`lzo`/`zstd`, default `zstd`) |
+| `list_backups` | `GET /nodes/{node}/storage/{storage}/content?content=backup` | `node`, `storage` |
+
+`mode: snapshot` is the preferred default — no guest downtime for VMs with QEMU guest agent.
+`compress: zstd` gives the best speed/ratio trade-off on modern hardware.
+
+Tests: success + apiError for `create_backup`; success + notFound for `list_backups`
+(4 new tests).
 
 ## Proxmox API Notes
 
