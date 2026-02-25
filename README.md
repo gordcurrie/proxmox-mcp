@@ -11,6 +11,10 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 | `list_nodes` | List all nodes in the cluster | — |
 | `get_node_status` | Detailed status of a node | `node` |
 | `list_cluster_resources` | All resources across the cluster | `type` (optional: `vm`, `storage`, `node`, `sdn`) |
+| `get_cluster_status` | Cluster status and quorum information | — |
+| `list_node_storage` | Storage pools available on a node | `node` |
+| `list_node_tasks` | Recent tasks on a node | `node`, `limit` (optional) |
+| `get_node_disks` | Physical disks detected on a node | `node` |
 
 ### QEMU VMs
 
@@ -18,6 +22,7 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 |---|---|---|
 | `list_vms` | QEMU VMs on a node | `node` |
 | `get_vm_status` | VM status and current config | `node`, `vmid` |
+| `get_vm_config` | Full VM configuration | `node`, `vmid` |
 | `start_vm` | Start a VM (returns task UPID) | `node`, `vmid` |
 | `stop_vm` | Hard stop a VM (returns task UPID) | `node`, `vmid` |
 | `shutdown_vm` | Graceful ACPI shutdown (returns task UPID) | `node`, `vmid` |
@@ -37,6 +42,7 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 |---|---|---|
 | `list_containers` | LXC containers on a node | `node` |
 | `get_container_status` | Container status | `node`, `vmid` |
+| `get_container_config` | Full container configuration | `node`, `vmid` |
 | `start_container` | Start a container (returns task UPID) | `node`, `vmid` |
 | `stop_container` | Stop a container (returns task UPID) | `node`, `vmid` |
 | `shutdown_container` | Graceful ACPI shutdown (returns task UPID) | `node`, `vmid` |

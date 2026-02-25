@@ -115,3 +115,13 @@ func (c *Client) CloneContainer(ctx context.Context, node string, vmid int, req 
 	}
 	return upid, nil
 }
+
+// GetContainerConfig returns the full configuration for an LXC container.
+func (c *Client) GetContainerConfig(ctx context.Context, node string, vmid int) (map[string]any, error) {
+	var config map[string]any
+	path := "/nodes/" + url.PathEscape(node) + "/lxc/" + strconv.Itoa(vmid) + "/config"
+	if err := c.get(ctx, path, &config); err != nil {
+		return nil, fmt.Errorf("getting config for container %d on node %s: %w", vmid, node, err)
+	}
+	return config, nil
+}

@@ -164,4 +164,15 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		return taskResult(upid)
 	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_vm_config",
+		Description: "Get the full configuration of a QEMU VM.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input vmInput) (*mcp.CallToolResult, any, error) {
+		config, err := client.GetVMConfig(ctx, input.Node, input.VMID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("get_vm_config: %w", err)
+		}
+		return jsonResult(config)
+	})
 }

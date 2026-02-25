@@ -212,9 +212,9 @@ New `SensitiveString` type in `types.go`: redacts value from `fmt` and `slog` ou
 | `create_container` | `node`, `vmid`, `ostemplate`, `hostname`, `memory`, `rootfs`, `password`, `net0`, `start` |
 | `clone_container` | `node`, `vmid`, `newid`, `hostname`, `target_node` |
 
-### PR 6 — Node and cluster depth (6 new tools)
+### PR 6 — Node and cluster depth (6 new tools) ✅ shipped
 
-Read-only tools using existing `get()`. No client changes needed.
+Read-only tools using existing `get()`. No new HTTP primitives needed.
 
 | Tool | API endpoint |
 |---|---|

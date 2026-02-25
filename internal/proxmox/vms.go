@@ -134,3 +134,13 @@ func (c *Client) CloneVM(ctx context.Context, node string, vmid int, req *CloneV
 	}
 	return upid, nil
 }
+
+// GetVMConfig returns the full configuration for a QEMU VM.
+func (c *Client) GetVMConfig(ctx context.Context, node string, vmid int) (map[string]any, error) {
+	var config map[string]any
+	path := "/nodes/" + url.PathEscape(node) + "/qemu/" + strconv.Itoa(vmid) + "/config"
+	if err := c.get(ctx, path, &config); err != nil {
+		return nil, fmt.Errorf("getting config for VM %d on node %s: %w", vmid, node, err)
+	}
+	return config, nil
+}
