@@ -201,6 +201,17 @@ func TestListNodeTasks_notFound(t *testing.T) {
 	}
 }
 
+func TestListNodeTasks_negativeLimitError(t *testing.T) {
+	t.Parallel()
+
+	// No server needed — the error is returned before any HTTP call.
+	c := newTestClient(t, "http://127.0.0.1:0")
+	_, err := c.ListNodeTasks(context.Background(), "pve1", -1)
+	if err == nil {
+		t.Fatal("expected error for negative limit, got nil")
+	}
+}
+
 func TestGetNodeDisks_success(t *testing.T) {
 	t.Parallel()
 

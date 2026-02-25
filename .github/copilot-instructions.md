@@ -3,6 +3,12 @@
 This is a Go MCP server that exposes Proxmox VE cluster operations as MCP tools.
 See `PLAN.md` for the full project plan, decisions, and implementation order.
 
+## Repository
+
+- **GitHub**: `git@github.com:gordcurrie/proxmox-mcp.git`
+- **Owner**: `gordcurrie` | **Repo**: `proxmox-mcp`
+- Use owner `gordcurrie` and repo `proxmox-mcp` for all GitHub MCP tool calls (PRs, issues, etc.)
+
 ## Stack
 
 - **Language**: Go (latest stable)

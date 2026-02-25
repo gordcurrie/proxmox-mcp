@@ -37,8 +37,11 @@ func (c *Client) ListNodeStorage(ctx context.Context, node string) ([]map[string
 }
 
 // ListNodeTasks returns recent tasks for a node. If limit is greater than
-// zero, at most that many tasks are returned.
+// zero, at most that many tasks are returned. A negative limit is an error.
 func (c *Client) ListNodeTasks(ctx context.Context, node string, limit int) ([]map[string]any, error) {
+	if limit < 0 {
+		return nil, fmt.Errorf("limit must be >= 0, got %d", limit)
+	}
 	path := "/nodes/" + url.PathEscape(node) + "/tasks"
 	if limit > 0 {
 		path += "?limit=" + strconv.Itoa(limit)

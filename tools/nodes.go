@@ -59,6 +59,9 @@ func registerNodeTools(s *mcp.Server, client *proxmox.Client) {
 		Name:        "list_node_tasks",
 		Description: "List recent tasks for a Proxmox node.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input listNodeTasksInput) (*mcp.CallToolResult, any, error) {
+		if input.Limit < 0 {
+			return nil, nil, fmt.Errorf("list_node_tasks: limit must be >= 0, got %d", input.Limit)
+		}
 		tasks, err := client.ListNodeTasks(ctx, input.Node, input.Limit)
 		if err != nil {
 			return nil, nil, fmt.Errorf("list_node_tasks: %w", err)

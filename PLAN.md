@@ -214,7 +214,7 @@ New `SensitiveString` type in `types.go`: redacts value from `fmt` and `slog` ou
 
 ### PR 6 — Node and cluster depth (6 new tools) ✅ shipped
 
-Read-only tools using existing `get()`. No client changes needed.
+Read-only tools using existing `get()`. No new HTTP primitives needed.
 
 | Tool | API endpoint |
 |---|---|
