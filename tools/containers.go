@@ -142,4 +142,19 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		return taskResult(upid)
 	})
+
+	type containerConfigInput struct {
+		Node string `json:"node" jsonschema:"node the container is on"`
+		VMID int    `json:"vmid" jsonschema:"numeric container ID"`
+	}
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_container_config",
+		Description: "Get the full configuration of an LXC container.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input containerConfigInput) (*mcp.CallToolResult, any, error) {
+		config, err := client.GetContainerConfig(ctx, input.Node, input.VMID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("get_container_config: %w", err)
+		}
+		return jsonResult(config)
+	})
 }

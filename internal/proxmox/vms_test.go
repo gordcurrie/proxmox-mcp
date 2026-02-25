@@ -436,3 +436,40 @@ func TestCloneVM_apiError(t *testing.T) {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
+
+func TestGetVMConfig_success(t *testing.T) {
+	t.Parallel()
+
+	want := map[string]any{"cores": float64(4), "memory": float64(4096), "name": "downloads"}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/nodes/pve3/qemu/108/config" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, want))
+	}))
+	defer srv.Close()
+
+	got, err := newTestClient(t, srv.URL).GetVMConfig(context.Background(), "pve3", 108)
+	if err != nil {
+		t.Fatalf("GetVMConfig: %v", err)
+	}
+	if got["name"] != "downloads" {
+		t.Errorf("name: got %v, want downloads", got["name"])
+	}
+}
+
+func TestGetVMConfig_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient(t, srv.URL).GetVMConfig(context.Background(), "pve1", 999)
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}

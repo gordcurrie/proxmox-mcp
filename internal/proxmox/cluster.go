@@ -21,3 +21,13 @@ func (c *Client) ListClusterResources(ctx context.Context, resourceType string) 
 	}
 	return resources, nil
 }
+
+// GetClusterStatus returns the cluster status and quorum information.
+// Each element in the returned slice describes a cluster member or quorum entry.
+func (c *Client) GetClusterStatus(ctx context.Context) ([]map[string]any, error) {
+	var status []map[string]any
+	if err := c.get(ctx, "/cluster/status", &status); err != nil {
+		return nil, fmt.Errorf("getting cluster status: %w", err)
+	}
+	return status, nil
+}

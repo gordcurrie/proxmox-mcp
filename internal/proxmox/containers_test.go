@@ -387,3 +387,40 @@ func TestCloneContainer_apiError(t *testing.T) {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
+
+func TestGetContainerConfig_success(t *testing.T) {
+	t.Parallel()
+
+	want := map[string]any{"hostname": "influxdb", "memory": float64(2048), "cores": float64(2)}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/nodes/pve1/lxc/100/config" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, want))
+	}))
+	defer srv.Close()
+
+	got, err := newTestClient(t, srv.URL).GetContainerConfig(context.Background(), "pve1", 100)
+	if err != nil {
+		t.Fatalf("GetContainerConfig: %v", err)
+	}
+	if got["hostname"] != "influxdb" {
+		t.Errorf("hostname: got %v, want influxdb", got["hostname"])
+	}
+}
+
+func TestGetContainerConfig_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient(t, srv.URL).GetContainerConfig(context.Background(), "pve1", 999)
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}

@@ -38,4 +38,15 @@ func registerClusterTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		return jsonResult(status)
 	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_cluster_status",
+		Description: "Get the cluster status and quorum information.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ struct{}) (*mcp.CallToolResult, any, error) {
+		status, err := client.GetClusterStatus(ctx)
+		if err != nil {
+			return nil, nil, fmt.Errorf("get_cluster_status: %w", err)
+		}
+		return jsonResult(status)
+	})
 }

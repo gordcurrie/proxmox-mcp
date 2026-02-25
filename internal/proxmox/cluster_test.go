@@ -87,3 +87,46 @@ func TestListClusterResources_notFound(t *testing.T) {
 		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }
+
+func TestGetClusterStatus_success(t *testing.T) {
+	t.Parallel()
+
+	want := []map[string]any{
+		{"type": "cluster", "name": "proxmox", "quorate": float64(1)},
+		{"type": "node", "name": "pve1", "online": float64(1)},
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/cluster/status" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, want))
+	}))
+	defer srv.Close()
+
+	got, err := newTestClient(t, srv.URL).GetClusterStatus(context.Background())
+	if err != nil {
+		t.Fatalf("GetClusterStatus: %v", err)
+	}
+	if len(got) != len(want) {
+		t.Fatalf("got %d entries, want %d", len(got), len(want))
+	}
+	if got[0]["type"] != "cluster" {
+		t.Errorf("first entry type: got %v, want cluster", got[0]["type"])
+	}
+}
+
+func TestGetClusterStatus_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient(t, srv.URL).GetClusterStatus(context.Background())
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
