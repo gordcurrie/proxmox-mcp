@@ -195,6 +195,34 @@ type CloneContainerRequest struct {
 	Target   string `json:"target,omitempty"` // target node; defaults to source node
 }
 
+// SetVMConfigRequest is the request body for PUT /nodes/{node}/qemu/{vmid}/config.
+// All fields are optional — only non-zero/non-nil fields are sent, so callers only
+// need to populate the fields they want to change.
+type SetVMConfigRequest struct {
+	Name        string `json:"name,omitempty"`
+	Memory      int    `json:"memory,omitempty"` // MB
+	Cores       int    `json:"cores,omitempty"`
+	OnBoot      *int   `json:"onboot,omitempty"` // nil = omit; 0 = disabled; 1 = start at boot
+	Description string `json:"description,omitempty"`
+}
+
+// SetContainerConfigRequest is the request body for PUT /nodes/{node}/lxc/{vmid}/config.
+// All fields are optional — only non-zero/non-nil fields are sent.
+type SetContainerConfigRequest struct {
+	Hostname    string `json:"hostname,omitempty"`
+	Memory      int    `json:"memory,omitempty"` // MB
+	Swap        *int   `json:"swap,omitempty"`   // MB; nil = omit; 0 = disable swap
+	OnBoot      *int   `json:"onboot,omitempty"` // nil = omit; 0 = disabled; 1 = start at boot
+	Description string `json:"description,omitempty"`
+}
+
+// ResizeDiskRequest is the request body for PUT /nodes/{node}/qemu/{vmid}/resize
+// and PUT /nodes/{node}/lxc/{vmid}/resize.
+type ResizeDiskRequest struct {
+	Disk string `json:"disk"` // e.g. "scsi0" for VMs, "rootfs" for containers
+	Size string `json:"size"` // absolute (e.g. "50G") or relative increment (e.g. "+10G")
+}
+
 // APIError represents an HTTP-level error returned by the Proxmox API.
 type APIError struct {
 	StatusCode int

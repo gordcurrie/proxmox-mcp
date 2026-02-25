@@ -2,7 +2,9 @@ package proxmox
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -471,5 +473,130 @@ func TestGetVMConfig_notFound(t *testing.T) {
 	_, err := newTestClient(t, srv.URL).GetVMConfig(context.Background(), "pve1", 999)
 	if !errors.Is(err, ErrNotFound) {
 		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestSetVMConfig_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			http.Error(w, "want PUT", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/qemu/100/config" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, nil))
+	}))
+	defer srv.Close()
+
+	onboot := 1
+	req := SetVMConfigRequest{Memory: 2048, Cores: 4, OnBoot: &onboot}
+	if err := newTestClient(t, srv.URL).SetVMConfig(context.Background(), "pve1", 100, &req); err != nil {
+		t.Fatalf("SetVMConfig: %v", err)
+	}
+}
+
+func TestSetVMConfig_apiError(t *testing.T) {
+	t.Parallel()
+	srv := vmErrorServer(t)
+	defer srv.Close()
+	req := SetVMConfigRequest{Memory: 1024}
+	err := newTestClient(t, srv.URL).SetVMConfig(context.Background(), "pve1", 100, &req)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
+
+func TestSetVMConfig_omitempty(t *testing.T) {
+	t.Parallel()
+
+	var gotBody []byte
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			http.Error(w, "want PUT", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/qemu/100/config" {
+			http.NotFound(w, r)
+			return
+		}
+		var err error
+		gotBody, err = io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "read body", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, nil))
+	}))
+	defer srv.Close()
+
+	// Only set Memory — name, cores, onboot, description must be absent from body.
+	req := SetVMConfigRequest{Memory: 512}
+	if err := newTestClient(t, srv.URL).SetVMConfig(context.Background(), "pve1", 100, &req); err != nil {
+		t.Fatalf("SetVMConfig: %v", err)
+	}
+
+	var decoded map[string]any
+	if err := json.Unmarshal(gotBody, &decoded); err != nil {
+		t.Fatalf("unmarshal body: %v", err)
+	}
+	for _, key := range []string{"name", "cores", "onboot", "description"} {
+		if _, present := decoded[key]; present {
+			t.Errorf("field %q should be omitted but was present in request body", key)
+		}
+	}
+	if decoded["memory"] == nil {
+		t.Error("field \"memory\" should be present but was absent")
+	}
+}
+
+func TestResizeVMDisk_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			http.Error(w, "want PUT", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/qemu/100/resize" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, testUPID))
+	}))
+	defer srv.Close()
+
+	req := ResizeDiskRequest{Disk: "scsi0", Size: "+10G"}
+	upid, err := newTestClient(t, srv.URL).ResizeVMDisk(context.Background(), "pve1", 100, &req)
+	if err != nil {
+		t.Fatalf("ResizeVMDisk: %v", err)
+	}
+	if upid != testUPID {
+		t.Errorf("upid: got %q, want %q", upid, testUPID)
+	}
+}
+
+func TestResizeVMDisk_apiError(t *testing.T) {
+	t.Parallel()
+	srv := vmErrorServer(t)
+	defer srv.Close()
+	req := ResizeDiskRequest{Disk: "scsi0", Size: "+10G"}
+	_, err := newTestClient(t, srv.URL).ResizeVMDisk(context.Background(), "pve1", 100, &req)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }

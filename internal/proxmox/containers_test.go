@@ -2,7 +2,9 @@ package proxmox
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -422,5 +424,131 @@ func TestGetContainerConfig_notFound(t *testing.T) {
 	_, err := newTestClient(t, srv.URL).GetContainerConfig(context.Background(), "pve1", 999)
 	if !errors.Is(err, ErrNotFound) {
 		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestSetContainerConfig_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			http.Error(w, "want PUT", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/lxc/200/config" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, nil))
+	}))
+	defer srv.Close()
+
+	onboot := 1
+	swap := 512
+	req := SetContainerConfigRequest{Memory: 1024, Swap: &swap, OnBoot: &onboot}
+	if err := newTestClient(t, srv.URL).SetContainerConfig(context.Background(), "pve1", 200, &req); err != nil {
+		t.Fatalf("SetContainerConfig: %v", err)
+	}
+}
+
+func TestSetContainerConfig_apiError(t *testing.T) {
+	t.Parallel()
+	srv := ctErrorServer(t)
+	defer srv.Close()
+	req := SetContainerConfigRequest{Memory: 512}
+	err := newTestClient(t, srv.URL).SetContainerConfig(context.Background(), "pve1", 200, &req)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
+
+func TestSetContainerConfig_omitempty(t *testing.T) {
+	t.Parallel()
+
+	var gotBody []byte
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			http.Error(w, "want PUT", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/lxc/200/config" {
+			http.NotFound(w, r)
+			return
+		}
+		var err error
+		gotBody, err = io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "read body", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, nil))
+	}))
+	defer srv.Close()
+
+	// Only set Memory — hostname, swap, onboot, description must be absent from body.
+	req := SetContainerConfigRequest{Memory: 512}
+	if err := newTestClient(t, srv.URL).SetContainerConfig(context.Background(), "pve1", 200, &req); err != nil {
+		t.Fatalf("SetContainerConfig: %v", err)
+	}
+
+	var decoded map[string]any
+	if err := json.Unmarshal(gotBody, &decoded); err != nil {
+		t.Fatalf("unmarshal body: %v", err)
+	}
+	for _, key := range []string{"hostname", "swap", "onboot", "description"} {
+		if _, present := decoded[key]; present {
+			t.Errorf("field %q should be omitted but was present in request body", key)
+		}
+	}
+	if decoded["memory"] == nil {
+		t.Error("field \"memory\" should be present but was absent")
+	}
+}
+
+func TestResizeContainerDisk_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			http.Error(w, "want PUT", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/lxc/200/resize" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, ctUPID))
+	}))
+	defer srv.Close()
+
+	req := ResizeDiskRequest{Disk: "rootfs", Size: "+5G"}
+	upid, err := newTestClient(t, srv.URL).ResizeContainerDisk(context.Background(), "pve1", 200, &req)
+	if err != nil {
+		t.Fatalf("ResizeContainerDisk: %v", err)
+	}
+	if upid != ctUPID {
+		t.Errorf("upid: got %q, want %q", upid, ctUPID)
+	}
+}
+
+func TestResizeContainerDisk_apiError(t *testing.T) {
+	t.Parallel()
+	srv := ctErrorServer(t)
+	defer srv.Close()
+	req := ResizeDiskRequest{Disk: "rootfs", Size: "+5G"}
+	_, err := newTestClient(t, srv.URL).ResizeContainerDisk(context.Background(), "pve1", 200, &req)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }

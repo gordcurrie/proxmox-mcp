@@ -125,3 +125,33 @@ func (c *Client) GetContainerConfig(ctx context.Context, node string, vmid int) 
 	}
 	return config, nil
 }
+
+// SetContainerConfig updates the configuration of an LXC container
+// synchronously via PUT. Only fields set on req are sent; zero-value and nil
+// fields are omitted. No task is returned — the change takes effect immediately.
+func (c *Client) SetContainerConfig(ctx context.Context, node string, vmid int, req *SetContainerConfigRequest) error {
+	if req == nil {
+		return errors.New("SetContainerConfig: req must not be nil")
+	}
+	var result any
+	path := "/nodes/" + url.PathEscape(node) + "/lxc/" + strconv.Itoa(vmid) + "/config"
+	if err := c.put(ctx, path, req, &result); err != nil {
+		return fmt.Errorf("setting config for container %d on node %s: %w", vmid, node, err)
+	}
+	return nil
+}
+
+// ResizeContainerDisk resizes a disk attached to an LXC container. It returns
+// the UPID of the asynchronous task. Size may be absolute (e.g. "10G") or a
+// relative increment (e.g. "+5G").
+func (c *Client) ResizeContainerDisk(ctx context.Context, node string, vmid int, req *ResizeDiskRequest) (string, error) {
+	if req == nil {
+		return "", errors.New("ResizeContainerDisk: req must not be nil")
+	}
+	var upid string
+	path := "/nodes/" + url.PathEscape(node) + "/lxc/" + strconv.Itoa(vmid) + "/resize"
+	if err := c.put(ctx, path, req, &upid); err != nil {
+		return "", fmt.Errorf("resizing disk %s on container %d on node %s: %w", req.Disk, vmid, node, err)
+	}
+	return upid, nil
+}
