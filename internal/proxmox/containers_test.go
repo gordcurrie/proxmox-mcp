@@ -552,3 +552,44 @@ func TestResizeContainerDisk_apiError(t *testing.T) {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
+
+func TestMigrateContainer_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "want POST", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/lxc/200/migrate" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, ctUPID))
+	}))
+	defer srv.Close()
+
+	req := MigrateContainerRequest{Target: "pve2", Restart: true}
+	upid, err := newTestClient(t, srv.URL).MigrateContainer(context.Background(), "pve1", 200, &req)
+	if err != nil {
+		t.Fatalf("MigrateContainer: %v", err)
+	}
+	if upid != ctUPID {
+		t.Errorf("upid: got %q, want %q", upid, ctUPID)
+	}
+}
+
+func TestMigrateContainer_apiError(t *testing.T) {
+	t.Parallel()
+	srv := ctErrorServer(t)
+	defer srv.Close()
+	_, err := newTestClient(t, srv.URL).MigrateContainer(context.Background(), "pve1", 200, &MigrateContainerRequest{Target: "pve2"})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
