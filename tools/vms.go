@@ -175,4 +175,56 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		return jsonResult(config)
 	})
+
+	type setVMConfigInput struct {
+		Node        string `json:"node"                    jsonschema:"node the VM is on"`
+		VMID        int    `json:"vmid"                    jsonschema:"numeric VM ID"`
+		Name        string `json:"name,omitempty"          jsonschema:"VM name; omit to leave unchanged"`
+		Memory      int    `json:"memory,omitempty"        jsonschema:"memory in MB; omit to leave unchanged"`
+		Cores       int    `json:"cores,omitempty"         jsonschema:"number of CPU cores; omit to leave unchanged"`
+		OnBoot      *bool  `json:"onboot,omitempty"        jsonschema:"start VM at boot; omit to leave unchanged"`
+		Description string `json:"description,omitempty"   jsonschema:"VM description; omit to leave unchanged"`
+	}
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "set_vm_config",
+		Description: "Update the configuration of a QEMU VM. Only supplied fields are changed; omitted fields are left as-is.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input setVMConfigInput) (*mcp.CallToolResult, any, error) {
+		var onboot *int
+		if input.OnBoot != nil {
+			v := 0
+			if *input.OnBoot {
+				v = 1
+			}
+			onboot = &v
+		}
+		req := proxmox.SetVMConfigRequest{
+			Name:        input.Name,
+			Memory:      input.Memory,
+			Cores:       input.Cores,
+			OnBoot:      onboot,
+			Description: input.Description,
+		}
+		if err := client.SetVMConfig(ctx, input.Node, input.VMID, &req); err != nil {
+			return nil, nil, fmt.Errorf("set_vm_config: %w", err)
+		}
+		return jsonResult(map[string]string{"status": "ok"})
+	})
+
+	type resizeVMDiskInput struct {
+		Node string `json:"node" jsonschema:"node the VM is on"`
+		VMID int    `json:"vmid" jsonschema:"numeric VM ID"`
+		Disk string `json:"disk" jsonschema:"disk to resize, e.g. scsi0"`
+		Size string `json:"size" jsonschema:"new size: absolute (e.g. 50G) or increment (e.g. +10G)"`
+	}
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "resize_vm_disk",
+		Description: "Resize a disk attached to a QEMU VM. Returns the async task ID. Use get_task_status to poll for completion.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input resizeVMDiskInput) (*mcp.CallToolResult, any, error) {
+		req := proxmox.ResizeDiskRequest{Disk: input.Disk, Size: input.Size}
+		upid, err := client.ResizeVMDisk(ctx, input.Node, input.VMID, &req)
+		if err != nil {
+			return nil, nil, fmt.Errorf("resize_vm_disk: %w", err)
+		}
+		return taskResult(upid)
+	})
 }

@@ -144,3 +144,33 @@ func (c *Client) GetVMConfig(ctx context.Context, node string, vmid int) (map[st
 	}
 	return config, nil
 }
+
+// SetVMConfig updates the configuration of a QEMU VM synchronously via PUT.
+// Only fields set on req are sent; zero-value fields are omitted. No task is
+// returned — the change takes effect immediately.
+func (c *Client) SetVMConfig(ctx context.Context, node string, vmid int, req *SetVMConfigRequest) error {
+	if req == nil {
+		return errors.New("SetVMConfig: req must not be nil")
+	}
+	var result any
+	path := "/nodes/" + url.PathEscape(node) + "/qemu/" + strconv.Itoa(vmid) + "/config"
+	if err := c.put(ctx, path, req, &result); err != nil {
+		return fmt.Errorf("setting config for VM %d on node %s: %w", vmid, node, err)
+	}
+	return nil
+}
+
+// ResizeVMDisk resizes a disk attached to a QEMU VM. It returns the UPID of
+// the asynchronous task. Size may be absolute (e.g. "50G") or a relative
+// increment (e.g. "+10G").
+func (c *Client) ResizeVMDisk(ctx context.Context, node string, vmid int, req *ResizeDiskRequest) (string, error) {
+	if req == nil {
+		return "", errors.New("ResizeVMDisk: req must not be nil")
+	}
+	var upid string
+	path := "/nodes/" + url.PathEscape(node) + "/qemu/" + strconv.Itoa(vmid) + "/resize"
+	if err := c.put(ctx, path, req, &upid); err != nil {
+		return "", fmt.Errorf("resizing disk %s on VM %d on node %s: %w", req.Disk, vmid, node, err)
+	}
+	return upid, nil
+}

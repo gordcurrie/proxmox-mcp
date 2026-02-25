@@ -30,6 +30,17 @@ See `PLAN.md` for the full project plan, decisions, and implementation order.
 - Table-driven tests using `t.Run` subtests
 - Use `gofumpt` formatting (stricter than `gofmt`)
 
+## Git Commits
+
+Always write multi-line commit messages via a temp file to avoid shell quoting issues:
+
+```bash
+python3 -c "open('/tmp/msg.txt','w').write('''subject line\n\nbody line 1\nbody line 2\n''')"
+git add . && git commit -F /tmp/msg.txt
+```
+
+Never pass multi-line messages with `-m` — the shell mangles them.
+
 ## Quality Gates — `make check` must pass before every commit
 
 ```

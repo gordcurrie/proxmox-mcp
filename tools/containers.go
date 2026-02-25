@@ -153,4 +153,56 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		return jsonResult(config)
 	})
+
+	type setContainerConfigInput struct {
+		Node        string `json:"node"                  jsonschema:"node the container is on"`
+		VMID        int    `json:"vmid"                  jsonschema:"numeric container ID"`
+		Hostname    string `json:"hostname,omitempty"    jsonschema:"container hostname; omit to leave unchanged"`
+		Memory      int    `json:"memory,omitempty"      jsonschema:"memory in MB; omit to leave unchanged"`
+		Swap        int    `json:"swap,omitempty"        jsonschema:"swap in MB; omit to leave unchanged"`
+		OnBoot      *bool  `json:"onboot,omitempty"      jsonschema:"start container at boot; omit to leave unchanged"`
+		Description string `json:"description,omitempty" jsonschema:"container description; omit to leave unchanged"`
+	}
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "set_container_config",
+		Description: "Update the configuration of an LXC container. Only supplied fields are changed; omitted fields are left as-is.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input setContainerConfigInput) (*mcp.CallToolResult, any, error) {
+		var onboot *int
+		if input.OnBoot != nil {
+			v := 0
+			if *input.OnBoot {
+				v = 1
+			}
+			onboot = &v
+		}
+		req := proxmox.SetContainerConfigRequest{
+			Hostname:    input.Hostname,
+			Memory:      input.Memory,
+			Swap:        input.Swap,
+			OnBoot:      onboot,
+			Description: input.Description,
+		}
+		if err := client.SetContainerConfig(ctx, input.Node, input.VMID, &req); err != nil {
+			return nil, nil, fmt.Errorf("set_container_config: %w", err)
+		}
+		return jsonResult(map[string]string{"status": "ok"})
+	})
+
+	type resizeContainerDiskInput struct {
+		Node string `json:"node" jsonschema:"node the container is on"`
+		VMID int    `json:"vmid" jsonschema:"numeric container ID"`
+		Disk string `json:"disk" jsonschema:"disk to resize, e.g. rootfs"`
+		Size string `json:"size" jsonschema:"new size: absolute (e.g. 10G) or increment (e.g. +5G)"`
+	}
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "resize_container_disk",
+		Description: "Resize a disk attached to an LXC container. Returns the async task ID. Use get_task_status to poll for completion.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input resizeContainerDiskInput) (*mcp.CallToolResult, any, error) {
+		req := proxmox.ResizeDiskRequest{Disk: input.Disk, Size: input.Size}
+		upid, err := client.ResizeContainerDisk(ctx, input.Node, input.VMID, &req)
+		if err != nil {
+			return nil, nil, fmt.Errorf("resize_container_disk: %w", err)
+		}
+		return taskResult(upid)
+	})
 }

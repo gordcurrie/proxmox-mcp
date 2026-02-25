@@ -35,6 +35,8 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 | `delete_vm_snapshot` | Delete a VM snapshot (returns task UPID) | `node`, `vmid`, `snapname` |
 | `create_vm` | Create a new QEMU VM (returns task UPID) | `node`, `vmid`, `name` (optional), `memory` (optional), `cores` (optional), `iso` (optional), `disk` (optional), `net0` (optional), `start` (optional) |
 | `clone_vm` | Clone a VM to a new ID (returns task UPID) | `node`, `vmid`, `newid`, `name` (optional), `target_node` (optional) |
+| `set_vm_config` | Update VM config (sync, no task) | `node`, `vmid`, `name` (optional), `memory` (optional), `cores` (optional), `onboot` (optional), `description` (optional) |
+| `resize_vm_disk` | Resize a VM disk (returns task UPID) | `node`, `vmid`, `disk` (e.g. `scsi0`), `size` (e.g. `+10G` or `50G`) |
 
 ### LXC Containers
 
@@ -53,6 +55,8 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 | `delete_container_snapshot` | Delete a container snapshot (returns task UPID) | `node`, `vmid`, `snapname` |
 | `create_container` | Create a new LXC container (returns task UPID) | `node`, `vmid`, `ostemplate`, `hostname` (optional), `memory` (optional), `rootfs` (optional), `password` (optional), `net0` (optional), `start` (optional) |
 | `clone_container` | Clone a container to a new ID (returns task UPID) | `node`, `vmid`, `newid`, `hostname` (optional), `target_node` (optional) |
+| `set_container_config` | Update container config (sync, no task) | `node`, `vmid`, `hostname` (optional), `memory` (optional), `swap` (optional), `onboot` (optional), `description` (optional) |
+| `resize_container_disk` | Resize a container disk (returns task UPID) | `node`, `vmid`, `disk` (e.g. `rootfs`), `size` (e.g. `+5G` or `10G`) |
 
 ### Tasks
 
