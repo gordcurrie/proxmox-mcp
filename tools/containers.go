@@ -159,7 +159,7 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 		VMID        int    `json:"vmid"                  jsonschema:"numeric container ID"`
 		Hostname    string `json:"hostname,omitempty"    jsonschema:"container hostname; omit to leave unchanged"`
 		Memory      int    `json:"memory,omitempty"      jsonschema:"memory in MB; omit to leave unchanged"`
-		Swap        int    `json:"swap,omitempty"        jsonschema:"swap in MB; omit to leave unchanged"`
+		Swap        *int   `json:"swap,omitempty"        jsonschema:"swap in MB; omit to leave unchanged; 0 disables swap"`
 		OnBoot      *bool  `json:"onboot,omitempty"      jsonschema:"start container at boot; omit to leave unchanged"`
 		Description string `json:"description,omitempty" jsonschema:"container description; omit to leave unchanged"`
 	}

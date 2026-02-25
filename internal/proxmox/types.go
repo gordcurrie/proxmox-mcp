@@ -211,7 +211,7 @@ type SetVMConfigRequest struct {
 type SetContainerConfigRequest struct {
 	Hostname    string `json:"hostname,omitempty"`
 	Memory      int    `json:"memory,omitempty"` // MB
-	Swap        int    `json:"swap,omitempty"`   // MB
+	Swap        *int   `json:"swap,omitempty"`   // MB; nil = omit; 0 = disable swap
 	OnBoot      *int   `json:"onboot,omitempty"` // nil = omit; 0 = disabled; 1 = start at boot
 	Description string `json:"description,omitempty"`
 }

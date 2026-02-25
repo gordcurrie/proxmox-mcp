@@ -445,7 +445,8 @@ func TestSetContainerConfig_success(t *testing.T) {
 	defer srv.Close()
 
 	onboot := 1
-	req := SetContainerConfigRequest{Memory: 1024, Swap: 512, OnBoot: &onboot}
+	swap := 512
+	req := SetContainerConfigRequest{Memory: 1024, Swap: &swap, OnBoot: &onboot}
 	if err := newTestClient(t, srv.URL).SetContainerConfig(context.Background(), "pve1", 200, &req); err != nil {
 		t.Fatalf("SetContainerConfig: %v", err)
 	}
@@ -471,6 +472,14 @@ func TestSetContainerConfig_omitempty(t *testing.T) {
 
 	var gotBody []byte
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			http.Error(w, "want PUT", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/lxc/200/config" {
+			http.NotFound(w, r)
+			return
+		}
 		var err error
 		gotBody, err = io.ReadAll(r.Body)
 		if err != nil {

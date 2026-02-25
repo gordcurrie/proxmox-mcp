@@ -520,6 +520,14 @@ func TestSetVMConfig_omitempty(t *testing.T) {
 
 	var gotBody []byte
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			http.Error(w, "want PUT", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/qemu/100/config" {
+			http.NotFound(w, r)
+			return
+		}
 		var err error
 		gotBody, err = io.ReadAll(r.Body)
 		if err != nil {
