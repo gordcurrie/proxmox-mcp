@@ -235,6 +235,19 @@ type MigrateContainerRequest struct {
 	Restart *int   `json:"restart,omitempty"` // nil = omit; 1 = stop, migrate, restart on target
 }
 
+// StorageContent represents a single volume entry from
+// GET /nodes/{node}/storage/{storage}/content.
+type StorageContent struct {
+	VolID     string `json:"volid"`
+	Content   string `json:"content"`
+	Format    string `json:"format,omitempty"`
+	Size      int64  `json:"size,omitempty"`
+	CTime     int64  `json:"ctime,omitempty"`
+	VMID      int    `json:"vmid,omitempty"`
+	Notes     string `json:"notes,omitempty"`
+	Protected int    `json:"protected,omitempty"` // 1 if protected from deletion
+}
+
 // APIError represents an HTTP-level error returned by the Proxmox API.
 type APIError struct {
 	StatusCode int
