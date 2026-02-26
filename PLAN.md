@@ -148,12 +148,12 @@ separately.
 
 ---
 
-## Phase 3 — Config mutation, migration, storage content, backup (target: v0.3.0)
+## Phase 3 — Config mutation, migration, storage content, backup ✅ shipped (v0.3.0)
 
 Builds on the `put` and `postWithBody` client methods already in place from Phase 2 PR #2.
-Delivered across 4 PRs. Each must pass `make check` before merge.
+Delivered across 5 PRs (#8–#12). Final tool count: **49 tools** (46 always-on + 3 destructive opt-in).
 
-### PR 7 — Config mutation (4 new tools)
+### PR #8 — Config mutation (4 new tools)
 
 Uses the existing `put()` client method — no new HTTP primitives needed.
 Proxmox exposes a sync (`PUT`) and async (`POST`) variant for config; we use `PUT` here so
@@ -181,7 +181,7 @@ Tests: success + apiError for all four client methods (8 new tests). `set_vm_con
 `set_container_config` additionally test that `omitempty` fields are omitted from the request
 body.
 
-### PR 8 — Migration (2 new tools)
+### PR #9 — Migration (2 new tools)
 
 Uses existing `postWithBody` — no new HTTP primitives needed.
 Both tools return a task UPID immediately (non-blocking).
@@ -199,7 +199,7 @@ in `vms.go` and `containers.go` respectively.
 
 Tests: success + apiError for both client methods (4 new tests).
 
-### PR 9 — Storage content (3 new tools)
+### PR #10 — Storage content (3 new tools)
 
 Uses existing `get()` for listing and the existing `delete()` method for removal.
 New file `internal/proxmox/storage.go`. New file `tools/storage.go`.
@@ -221,7 +221,7 @@ needed to populate valid values for `create_vm` and `create_container`.
 Tests: success + notFound for `list_storage_content` and `get_storage_content_info`;
 success + apiError for `delete_storage_content` (5 new tests).
 
-### PR 10 — Backup (2 new tools)
+### PR #11 — Backup (2 new tools)
 
 Uses existing `postWithBody` and `get()` — no new HTTP primitives needed.
 New `CreateBackupRequest` struct in `types.go`. Client methods in a new
@@ -243,6 +243,97 @@ storage content client from PR 9.
 
 Tests: success + apiError for `create_backup`; success + notFound for `list_backups`
 (4 new tests).
+
+### PR #12 — MCP annotations + documentation
+
+`ReadOnlyHint: true` added to all 19 read-only tools across 7 `tools/` files.
+README updated with configuration examples for VS Code Copilot, Claude Desktop, and OpenCode.
+Generic placeholders used for all hostnames and token IDs in config examples.
+
+---
+
+## CI — GitHub Actions ✅ in place
+
+`.github/workflows/ci.yml` runs on every push and PR to `main`, split across two jobs:
+
+| Job | Steps |
+|---|---|
+| `test` | `go test -race -count=1 ./...` |
+| `lint` | `make install-tools` → `fix` → `fmt` → `vet` → `golangci-lint` → `gosec` → `govulncheck` → `build` |
+
+---
+
+## Phase 4 — Restore, network visibility, node power, disk management (target: v0.4.0)
+
+Completes the operational lifecycle gaps identified after v0.3.0. Delivered across 3 PRs.
+Each must pass `make check` before merge.
+
+### PR #13 — Backup restore (2 new tools)
+
+Completes the backup lifecycle: create → list → **restore** → delete.
+Uses existing `postWithBody` — same HTTP primitive as `create_vm` / `create_container`.
+Restore is the same `POST /nodes/{node}/qemu` and `POST /nodes/{node}/lxc` endpoints as
+create, but with an `archive=` parameter pointing to a backup volume ID instead of building
+a fresh VM config.
+
+New `RestoreVMRequest` and `RestoreContainerRequest` structs in `types.go`.
+New client methods `RestoreVM` in `vms.go`, `RestoreContainer` in `containers.go`.
+Tool handlers in `tools/vms.go` and `tools/containers.go` respectively.
+
+| Tool | API endpoint | Params |
+|---|---|---|
+| `restore_vm` | `POST /nodes/{node}/qemu` w/ `archive=` | `node`, `vmid` (target ID), `archive` (volid e.g. `local:backup/vzdump-qemu-100-...tar.zst`), `storage` (target storage), `start` (bool) |
+| `restore_container` | `POST /nodes/{node}/lxc` w/ `ostemplate=` | `node`, `vmid` (target ID), `archive` (volid), `storage` (target rootfs storage), `hostname`, `start` (bool) |
+
+Both return a task UPID — poll with `get_task_status`.
+
+Tests: success + apiError for both client methods (4 new tests).
+
+### PR #14 — Node network (2 new tools)
+
+Read-only tools to inspect node networking — required context before creating VMs or
+containers that need specific bridges. All three get `ReadOnlyHint: true`.
+
+New file `internal/proxmox/network.go`. New file `tools/network.go`.
+`RegisterAll` gains `registerNetworkTools`.
+
+| Tool | API endpoint | Params |
+|---|---|---|
+| `list_node_network` | `GET /nodes/{node}/network` | `node`, `type` (optional filter: `bridge`, `bond`, `eth`, `alias`, `vlan`, `OVSBridge`, `OVSBond`, `OVSPort`, `OVSIntPort`, `any_bridge`) |
+| `get_node_network_interface` | `GET /nodes/{node}/network/{iface}` | `node`, `iface` (interface name e.g. `vmbr0`) |
+
+Tests: success + notFound for each (4 new tests).
+
+### PR #15 — Node power + disk move (3 new tools)
+
+Node-level power management and VM disk relocation. Two distinct API areas bundled because
+both are small and share the same PR quality overhead.
+
+**Node power** — `POST /nodes/{node}/status` with `command=reboot|shutdown`. These are
+destructive by nature (take down a whole node) so both require `confirmed: true` and are
+gated behind `PROXMOX_ALLOW_DESTRUCTIVE`. Client method `NodeCommand(ctx, node, command)`
+in `nodes.go`. Tool handlers in `tools/nodes.go`.
+
+**Move VM disk** — `POST /nodes/{node}/qemu/{vmid}/move_disk`. Moves a VM disk to a
+different storage pool; optionally deletes the source after move. Returns a task UPID.
+New `MoveVMDiskRequest` struct in `types.go`. Client method `MoveVMDisk` in `vms.go`.
+Tool handler in `tools/vms.go`.
+
+| Tool | API endpoint | Params |
+|---|---|---|
+| `reboot_node` | `POST /nodes/{node}/status` (`command=reboot`) | `node`, `confirmed` (must be `true`) |
+| `shutdown_node` | `POST /nodes/{node}/status` (`command=shutdown`) | `node`, `confirmed` (must be `true`) |
+| `move_vm_disk` | `POST /nodes/{node}/qemu/{vmid}/move_disk` | `node`, `vmid`, `disk` (e.g. `scsi0`), `storage` (target storage), `delete_source` (bool, default `false`) |
+
+`reboot_node` and `shutdown_node` use `DestructiveHint: true` and are only registered when
+`PROXMOX_ALLOW_DESTRUCTIVE=true`. `move_vm_disk` is always registered (non-destructive —
+data is preserved).
+
+Tests: success + apiError for all three (6 new tests).
+
+**Phase 4 target tool count:** 49 + 7 = **56 tools** (51 always-on + 5 destructive opt-in).
+
+---
 
 ## Proxmox API Notes
 
