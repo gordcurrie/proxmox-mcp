@@ -175,6 +175,23 @@ func (c *Client) ResizeVMDisk(ctx context.Context, node string, vmid int, req *R
 	return upid, nil
 }
 
+// RestoreVM restores a QEMU VM from a vzdump backup archive. It returns the
+// UPID of the asynchronous task. The archive field must be a full volid such
+// as "local:backup/vzdump-qemu-100-....vma.zst". Supply vmid even if the
+// backup was taken of a different ID — Proxmox assigns the new ID from the
+// request. Set req.Start = 1 to start the VM automatically after restore.
+func (c *Client) RestoreVM(ctx context.Context, node string, req *RestoreVMRequest) (string, error) {
+	if req == nil {
+		return "", errors.New("RestoreVM: req must not be nil")
+	}
+	var upid string
+	path := "/nodes/" + url.PathEscape(node) + "/qemu"
+	if err := c.postWithBody(ctx, path, req, &upid); err != nil {
+		return "", fmt.Errorf("restoring VM %d on node %s: %w", req.VMID, node, err)
+	}
+	return upid, nil
+}
+
 // MigrateVM migrates a QEMU VM to another node. It returns the UPID of the
 // asynchronous task. Set req.Online = true for live migration (no guest
 // downtime when QEMU guest agent is running).

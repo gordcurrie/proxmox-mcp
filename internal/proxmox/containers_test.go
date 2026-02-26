@@ -612,3 +612,72 @@ func TestMigrateContainer_apiError(t *testing.T) {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
+
+const testRestoreCTUPID = "UPID:pve1:000015E3:00000000:60F4B3A7:vzrestore:200:root@pam:"
+
+func TestRestoreContainer_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "want POST", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/lxc" {
+			http.NotFound(w, r)
+			return
+		}
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "read body", http.StatusInternalServerError)
+			return
+		}
+		var payload map[string]any
+		if err := json.Unmarshal(body, &payload); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		if payload["ostemplate"] != "local:backup/vzdump-lxc-200-2024_01_01-00_00_00.tar.zst" {
+			http.Error(w, "wrong ostemplate", http.StatusBadRequest)
+			return
+		}
+		if payload["restore"] != float64(1) {
+			http.Error(w, "restore should be 1", http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, testRestoreCTUPID))
+	}))
+	defer srv.Close()
+
+	// Restore field is deliberately set to 0 here to verify that RestoreContainer
+	// enforces restore=1 internally regardless of what the caller supplies.
+	req := RestoreContainerRequest{
+		VMID:    200,
+		Archive: "local:backup/vzdump-lxc-200-2024_01_01-00_00_00.tar.zst",
+		Restore: 0,
+		Storage: "local-lvm",
+	}
+	upid, err := newTestClient(t, srv.URL).RestoreContainer(context.Background(), "pve1", &req)
+	if err != nil {
+		t.Fatalf("RestoreContainer: %v", err)
+	}
+	if upid != testRestoreCTUPID {
+		t.Errorf("upid: got %q, want %q", upid, testRestoreCTUPID)
+	}
+}
+
+func TestRestoreContainer_apiError(t *testing.T) {
+	t.Parallel()
+	srv := ctErrorServer(t)
+	defer srv.Close()
+	req := RestoreContainerRequest{VMID: 200, Archive: "local:backup/vzdump-lxc-200-2024_01_01-00_00_00.tar.zst", Restore: 1}
+	_, err := newTestClient(t, srv.URL).RestoreContainer(context.Background(), "pve1", &req)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}

@@ -30,6 +30,20 @@ See `PLAN.md` for the full project plan, decisions, and implementation order.
 - Table-driven tests using `t.Run` subtests
 - Use `gofumpt` formatting (stricter than `gofmt`)
 
+## Documentation — Required for Every PR
+
+Every PR that adds or changes tools **must** update both files before committing:
+
+1. **`README.md`** — add each new tool to the appropriate table (Cluster & Nodes, QEMU VMs,
+   LXC Containers, Backups, Storage Content, or Destructive). Include the tool name, a
+   one-line description, and its parameters. Destructive tools go in the Destructive table.
+
+2. **`PLAN.md`** — mark the PR section as completed (add ✅ if not already there) and update
+   the running tool count at the bottom of the phase section.
+
+Do not skip these updates under any circumstances — documentation is part of the definition
+of done for every PR, the same as passing `make check`.
+
 ## Git Commits
 
 Always write multi-line commit messages via a temp file to avoid shell quoting issues:

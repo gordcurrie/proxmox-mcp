@@ -253,4 +253,32 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		return taskResult(upid)
 	})
+
+	type restoreVMInput struct {
+		Node    string `json:"node"             jsonschema:"node to restore the VM on"`
+		VMID    int    `json:"vmid"             jsonschema:"numeric VM ID to assign to the restored VM"`
+		Archive string `json:"archive"          jsonschema:"backup volume ID, e.g. local:backup/vzdump-qemu-100-2024_01_01-00_00_00.vma.zst"`
+		Storage string `json:"storage,omitempty" jsonschema:"target storage pool for restored disk images"`
+		Start   bool   `json:"start,omitempty"  jsonschema:"true to start the VM immediately after restore"`
+	}
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "restore_vm",
+		Description: "Restore a QEMU VM from a vzdump backup archive. Returns the async task ID — use get_task_status to poll for completion. Use list_backups to find available archive volume IDs.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input restoreVMInput) (*mcp.CallToolResult, any, error) {
+		start := 0
+		if input.Start {
+			start = 1
+		}
+		req := proxmox.RestoreVMRequest{
+			VMID:    input.VMID,
+			Archive: input.Archive,
+			Storage: input.Storage,
+			Start:   start,
+		}
+		upid, err := client.RestoreVM(ctx, input.Node, &req)
+		if err != nil {
+			return nil, nil, fmt.Errorf("restore_vm: %w", err)
+		}
+		return taskResult(upid)
+	})
 }

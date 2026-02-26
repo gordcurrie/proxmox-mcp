@@ -156,6 +156,25 @@ func (c *Client) ResizeContainerDisk(ctx context.Context, node string, vmid int,
 	return upid, nil
 }
 
+// RestoreContainer restores an LXC container from a vzdump backup archive. It
+// returns the UPID of the asynchronous task. Proxmox reuses the "ostemplate"
+// API parameter for the backup volid when restore=1. Supply vmid to assign a
+// new container ID. Set req.Start = 1 to start the container after restore.
+func (c *Client) RestoreContainer(ctx context.Context, node string, req *RestoreContainerRequest) (string, error) {
+	if req == nil {
+		return "", errors.New("RestoreContainer: req must not be nil")
+	}
+	// Always enforce restore=1 — this method exists solely for restores and the
+	// field must be set regardless of what the caller supplied.
+	req.Restore = 1
+	var upid string
+	path := "/nodes/" + url.PathEscape(node) + "/lxc"
+	if err := c.postWithBody(ctx, path, req, &upid); err != nil {
+		return "", fmt.Errorf("restoring container %d on node %s: %w", req.VMID, node, err)
+	}
+	return upid, nil
+}
+
 // MigrateContainer migrates an LXC container to another node. It returns the
 // UPID of the asynchronous task. Set req.Restart = true to stop the container,
 // migrate it, and restart it on the target node.

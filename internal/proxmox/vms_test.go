@@ -660,3 +660,73 @@ func TestMigrateVM_apiError(t *testing.T) {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
+
+const testRestoreVMUPID = "UPID:pve1:000015E3:00000000:60F4B3A7:qmrestore:100:root@pam:"
+
+func TestRestoreVM_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "want POST", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/qemu" {
+			http.NotFound(w, r)
+			return
+		}
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "read body", http.StatusInternalServerError)
+			return
+		}
+		var payload map[string]any
+		if err := json.Unmarshal(body, &payload); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		if payload["archive"] != "local:backup/vzdump-qemu-100-2024_01_01-00_00_00.vma.zst" {
+			http.Error(w, "wrong archive", http.StatusBadRequest)
+			return
+		}
+		if vmid, ok := payload["vmid"]; !ok || vmid != float64(100) {
+			http.Error(w, "wrong vmid", http.StatusBadRequest)
+			return
+		}
+		if storage, ok := payload["storage"]; !ok || storage != "local-lvm" {
+			http.Error(w, "wrong storage", http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, testRestoreVMUPID))
+	}))
+	defer srv.Close()
+
+	req := RestoreVMRequest{
+		VMID:    100,
+		Archive: "local:backup/vzdump-qemu-100-2024_01_01-00_00_00.vma.zst",
+		Storage: "local-lvm",
+	}
+	upid, err := newTestClient(t, srv.URL).RestoreVM(context.Background(), "pve1", &req)
+	if err != nil {
+		t.Fatalf("RestoreVM: %v", err)
+	}
+	if upid != testRestoreVMUPID {
+		t.Errorf("upid: got %q, want %q", upid, testRestoreVMUPID)
+	}
+}
+
+func TestRestoreVM_apiError(t *testing.T) {
+	t.Parallel()
+	srv := vmErrorServer(t)
+	defer srv.Close()
+	req := RestoreVMRequest{VMID: 100, Archive: "local:backup/vzdump-qemu-100-2024_01_01-00_00_00.vma.zst"}
+	_, err := newTestClient(t, srv.URL).RestoreVM(context.Background(), "pve1", &req)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}
