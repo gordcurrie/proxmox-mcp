@@ -150,8 +150,8 @@ Create `.vscode/mcp.json` in your workspace (already gitignored):
       "type": "stdio",
       "command": "/path/to/proxmox-mcp/bin/proxmox-mcp",
       "env": {
-        "PROXMOX_API_URL": "https://pve:8006/api2/json",
-        "PROXMOX_TOKEN_ID": "root@pam!mcp",
+        "PROXMOX_API_URL": "https://your-proxmox-host:8006/api2/json",
+        "PROXMOX_TOKEN_ID": "user@realm!tokenid",
         "PROXMOX_TOKEN_SECRET": "your-token-secret"
       }
     }
@@ -171,8 +171,8 @@ Add the server to `~/Library/Application Support/Claude/claude_desktop_config.js
     "proxmox-mcp": {
       "command": "/path/to/proxmox-mcp/bin/proxmox-mcp",
       "env": {
-        "PROXMOX_API_URL": "https://pve:8006/api2/json",
-        "PROXMOX_TOKEN_ID": "root@pam!mcp",
+        "PROXMOX_API_URL": "https://your-proxmox-host:8006/api2/json",
+        "PROXMOX_TOKEN_ID": "user@realm!tokenid",
         "PROXMOX_TOKEN_SECRET": "your-token-secret"
       }
     }
@@ -195,8 +195,8 @@ Add the server to `opencode.json` in your project root (or `~/.config/opencode/o
       "command": ["/path/to/proxmox-mcp/bin/proxmox-mcp"],
       "enabled": true,
       "environment": {
-        "PROXMOX_API_URL": "https://pve:8006/api2/json",
-        "PROXMOX_TOKEN_ID": "root@pam!mcp",
+        "PROXMOX_API_URL": "https://your-proxmox-host:8006/api2/json",
+        "PROXMOX_TOKEN_ID": "user@realm!tokenid",
         "PROXMOX_TOKEN_SECRET": "your-token-secret"
       }
     }
