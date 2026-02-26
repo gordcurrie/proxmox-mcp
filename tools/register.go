@@ -22,6 +22,7 @@ func RegisterAll(s *mcp.Server, client *proxmox.Client, cfg Config) {
 	registerClusterTools(s, client)
 	registerSnapshotTools(s, client)
 	registerStorageTools(s, client)
+	registerBackupTools(s, client)
 	if cfg.AllowDestructive {
 		registerDestructiveTools(s, client)
 	}
