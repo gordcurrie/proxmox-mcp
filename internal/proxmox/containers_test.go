@@ -650,10 +650,12 @@ func TestRestoreContainer_success(t *testing.T) {
 	}))
 	defer srv.Close()
 
+	// Restore field is deliberately set to 0 here to verify that RestoreContainer
+	// enforces restore=1 internally regardless of what the caller supplies.
 	req := RestoreContainerRequest{
 		VMID:    200,
 		Archive: "local:backup/vzdump-lxc-200-2024_01_01-00_00_00.tar.zst",
-		Restore: 1,
+		Restore: 0,
 		Storage: "local-lvm",
 	}
 	upid, err := newTestClient(t, srv.URL).RestoreContainer(context.Background(), "pve1", &req)

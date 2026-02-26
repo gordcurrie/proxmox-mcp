@@ -689,6 +689,14 @@ func TestRestoreVM_success(t *testing.T) {
 			http.Error(w, "wrong archive", http.StatusBadRequest)
 			return
 		}
+		if vmid, ok := payload["vmid"]; !ok || vmid != float64(100) {
+			http.Error(w, "wrong vmid", http.StatusBadRequest)
+			return
+		}
+		if storage, ok := payload["storage"]; !ok || storage != "local-lvm" {
+			http.Error(w, "wrong storage", http.StatusBadRequest)
+			return
+		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(jsonEnvelope(t, testRestoreVMUPID))
 	}))
