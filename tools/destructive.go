@@ -60,4 +60,27 @@ func registerDestructiveTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		return taskResult(upid)
 	})
+
+	type deleteStorageContentInput struct {
+		Node      string `json:"node"      jsonschema:"node the storage pool is on"`
+		Storage   string `json:"storage"   jsonschema:"name of the storage pool (e.g. local)"`
+		Volume    string `json:"volume"    jsonschema:"volume ID to delete, e.g. local:iso/debian-12.iso"`
+		Confirmed bool   `json:"confirmed" jsonschema:"must be set to true to confirm deletion"`
+	}
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "delete_storage_content",
+		Description: "Permanently delete a volume from a Proxmox storage pool. Set confirmed=true to proceed. Returns the async task ID.",
+		Annotations: &mcp.ToolAnnotations{
+			DestructiveHint: &destructiveHint,
+		},
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input deleteStorageContentInput) (*mcp.CallToolResult, any, error) {
+		if !input.Confirmed {
+			return nil, nil, errors.New("delete_storage_content: confirmed must be true to proceed with deletion")
+		}
+		upid, err := client.DeleteStorageContent(ctx, input.Node, input.Storage, input.Volume)
+		if err != nil {
+			return nil, nil, fmt.Errorf("delete_storage_content: %w", err)
+		}
+		return taskResult(upid)
+	})
 }

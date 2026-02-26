@@ -66,6 +66,13 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 |---|---|---|
 | `get_task_status` | Poll the status of an async task | `node`, `upid` |
 
+### Storage Content
+
+| Tool | Description | Parameters |
+|---|---|---|
+| `list_storage_content` | List volumes in a storage pool | `node`, `storage`, `content` (optional: `iso`, `vztmpl`, `backup`, `images`) |
+| `get_storage_content_info` | Detailed info about a specific volume | `node`, `storage`, `volume` (full volid, e.g. `local:iso/debian.iso`) |
+
 ### Destructive (opt-in)
 
 These tools are **not registered by default**. Set `PROXMOX_ALLOW_DESTRUCTIVE=true` to enable them.
@@ -74,6 +81,7 @@ These tools are **not registered by default**. Set `PROXMOX_ALLOW_DESTRUCTIVE=tr
 |---|---|---|
 | `delete_vm` | Permanently delete a stopped QEMU VM (returns task UPID) | `node`, `vmid`, `confirmed` (must be `true`), `purge` (optional) |
 | `delete_container` | Permanently delete a stopped LXC container (returns task UPID) | `node`, `vmid`, `confirmed` (must be `true`), `purge` (optional) |
+| `delete_storage_content` | Permanently delete a volume from a storage pool (returns task UPID) | `node`, `storage`, `volume` (full volid), `confirmed` (must be `true`) |
 
 Lifecycle and snapshot operations are non-blocking — they return the UPID of the async task immediately. Use `get_task_status` to poll for completion.
 
@@ -102,7 +110,7 @@ All configuration is via environment variables:
 | `PROXMOX_TOKEN_ID` | yes | e.g. `root@pam!mcp` |
 | `PROXMOX_TOKEN_SECRET` | yes | Token UUID secret |
 | `PROXMOX_INSECURE` | no | `true` to skip TLS verification (self-signed certs) |
-| `PROXMOX_ALLOW_DESTRUCTIVE` | no | `true` to register `delete_vm` and `delete_container` tools (default: disabled) |
+| `PROXMOX_ALLOW_DESTRUCTIVE` | no | `true` to register `delete_vm`, `delete_container`, and `delete_storage_content` tools (default: disabled) |
 
 Source your `.env` file before running:
 
