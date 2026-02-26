@@ -268,7 +268,7 @@ Generic placeholders used for all hostnames and token IDs in config examples.
 Completes the operational lifecycle gaps identified after v0.3.0. Delivered across 3 PRs.
 Each must pass `make check` before merge.
 
-### PR #13 — Backup restore (2 new tools)
+### PR #13 — Backup restore (2 new tools) ✅
 
 Completes the backup lifecycle: create → list → **restore** → delete.
 Uses existing `postWithBody` — same HTTP primitive as `create_vm` / `create_container`.
@@ -332,6 +332,7 @@ data is preserved).
 Tests: success + apiError for all three (6 new tests).
 
 **Phase 4 target tool count:** 49 + 7 = **56 tools** (51 always-on + 5 destructive opt-in).
+Running total after PR #13: **51 tools** (48 always-on + 3 destructive opt-in).
 
 ---
 

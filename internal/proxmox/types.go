@@ -244,6 +244,28 @@ type CreateBackupRequest struct {
 	Compress string `json:"compress,omitempty"` // 0 | gzip | lzo | zstd (default: zstd)
 }
 
+// RestoreVMRequest is the request body for POST /nodes/{node}/qemu when
+// restoring a QEMU VM from a vzdump backup archive. The Archive field
+// maps to Proxmox's "archive" parameter.
+type RestoreVMRequest struct {
+	VMID    int    `json:"vmid"`
+	Archive string `json:"archive"`           // backup volid, e.g. "local:backup/vzdump-qemu-100-....vma.zst"
+	Storage string `json:"storage,omitempty"` // target storage pool for restored disks
+	Start   int    `json:"start,omitempty"`   // 1 to start VM immediately after restore
+}
+
+// RestoreContainerRequest is the request body for POST /nodes/{node}/lxc when
+// restoring an LXC container from a vzdump backup archive. Proxmox reuses the
+// "ostemplate" field for the backup volid when restore=1.
+type RestoreContainerRequest struct {
+	VMID     int    `json:"vmid"`
+	Archive  string `json:"ostemplate"`         // backup volid — Proxmox uses "ostemplate" for this parameter
+	Restore  int    `json:"restore"`            // must be 1 to signal restore (not fresh creation)
+	Storage  string `json:"storage,omitempty"`  // target storage pool for rootfs
+	Hostname string `json:"hostname,omitempty"` // override hostname after restore
+	Start    int    `json:"start,omitempty"`    // 1 to start container immediately after restore
+}
+
 // StorageContent represents a single volume entry from
 // GET /nodes/{node}/storage/{storage}/content.
 type StorageContent struct {

@@ -231,4 +231,35 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		return taskResult(upid)
 	})
+
+	type restoreContainerInput struct {
+		Node     string `json:"node"              jsonschema:"node to restore the container on"`
+		VMID     int    `json:"vmid"              jsonschema:"numeric container ID to assign to the restored container"`
+		Archive  string `json:"archive"           jsonschema:"backup volume ID, e.g. local:backup/vzdump-lxc-200-2024_01_01-00_00_00.tar.zst"`
+		Storage  string `json:"storage,omitempty" jsonschema:"target storage pool for the restored rootfs"`
+		Hostname string `json:"hostname,omitempty" jsonschema:"override hostname after restore"`
+		Start    bool   `json:"start,omitempty"   jsonschema:"true to start the container immediately after restore"`
+	}
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "restore_container",
+		Description: "Restore an LXC container from a vzdump backup archive. Returns the async task ID — use get_task_status to poll for completion. Use list_backups to find available archive volume IDs.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input restoreContainerInput) (*mcp.CallToolResult, any, error) {
+		start := 0
+		if input.Start {
+			start = 1
+		}
+		req := proxmox.RestoreContainerRequest{
+			VMID:     input.VMID,
+			Archive:  input.Archive,
+			Restore:  1,
+			Storage:  input.Storage,
+			Hostname: input.Hostname,
+			Start:    start,
+		}
+		upid, err := client.RestoreContainer(ctx, input.Node, &req)
+		if err != nil {
+			return nil, nil, fmt.Errorf("restore_container: %w", err)
+		}
+		return taskResult(upid)
+	})
 }
