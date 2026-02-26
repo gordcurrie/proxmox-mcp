@@ -60,6 +60,13 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 | `resize_container_disk` | Resize a container disk (returns task UPID) | `node`, `vmid`, `disk` (e.g. `rootfs`), `size` (e.g. `+5G` or `10G`) |
 | `migrate_container` | Migrate a container to another node (returns task UPID) | `node`, `vmid`, `target`, `restart` (optional, stop+migrate+start) |
 
+### Backups
+
+| Tool | Description | Parameters |
+|---|---|---|
+| `create_backup` | Create a vzdump backup of a VM or container (returns task UPID) | `node`, `vmid`, `storage` (optional), `mode` (optional: `snapshot`\|`suspend`\|`stop`, default `snapshot`), `compress` (optional: `zstd`\|`gzip`\|`lzo`\|`0`, default `zstd`) |
+| `list_backups` | List all backup volumes in a storage pool | `node`, `storage` |
+
 ### Tasks
 
 | Tool | Description | Parameters |

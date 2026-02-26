@@ -235,6 +235,15 @@ type MigrateContainerRequest struct {
 	Restart *int   `json:"restart,omitempty"` // nil = omit; 1 = stop, migrate, restart on target
 }
 
+// CreateBackupRequest is the request body for POST /nodes/{node}/vzdump.
+// All fields except VMID are optional — zero values use Proxmox defaults.
+type CreateBackupRequest struct {
+	VMID     int    `json:"vmid"`               // VM or container ID to back up
+	Storage  string `json:"storage,omitempty"`  // target storage pool
+	Mode     string `json:"mode,omitempty"`     // snapshot | suspend | stop (default: snapshot)
+	Compress string `json:"compress,omitempty"` // 0 | gzip | lzo | zstd (default: zstd)
+}
+
 // StorageContent represents a single volume entry from
 // GET /nodes/{node}/storage/{storage}/content.
 type StorageContent struct {
