@@ -16,6 +16,7 @@ func registerClusterTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "list_cluster_resources",
 		Description: "List all resources across the Proxmox cluster. Optionally filter by type: vm, storage, node, sdn.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input listClusterResourcesInput) (*mcp.CallToolResult, any, error) {
 		resources, err := client.ListClusterResources(ctx, input.Type)
 		if err != nil {
@@ -31,6 +32,7 @@ func registerClusterTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_task_status",
 		Description: "Get the status of an async Proxmox task by UPID. Poll until status is stopped.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input getTaskStatusInput) (*mcp.CallToolResult, any, error) {
 		status, err := client.GetTaskStatus(ctx, input.Node, input.UPID)
 		if err != nil {
@@ -43,6 +45,7 @@ func registerClusterTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_cluster_status",
 		Description: "Get the cluster status and quorum information.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ getClusterStatusInput) (*mcp.CallToolResult, any, error) {
 		status, err := client.GetClusterStatus(ctx)
 		if err != nil {

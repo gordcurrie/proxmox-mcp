@@ -16,6 +16,7 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "list_vms",
 		Description: "List all QEMU virtual machines on a Proxmox node.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input listVMsInput) (*mcp.CallToolResult, any, error) {
 		vms, err := client.ListVMs(ctx, input.Node)
 		if err != nil {
@@ -32,6 +33,7 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_vm_status",
 		Description: "Get the current status and configuration of a QEMU VM.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input vmInput) (*mcp.CallToolResult, any, error) {
 		status, err := client.GetVMStatus(ctx, input.Node, input.VMID)
 		if err != nil {
@@ -168,6 +170,7 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_vm_config",
 		Description: "Get the full configuration of a QEMU VM.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input vmInput) (*mcp.CallToolResult, any, error) {
 		config, err := client.GetVMConfig(ctx, input.Node, input.VMID)
 		if err != nil {

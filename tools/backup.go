@@ -41,6 +41,7 @@ func registerBackupTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "list_backups",
 		Description: "List all backup volumes stored in a Proxmox storage pool on a node.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input listBackupsInput) (*mcp.CallToolResult, any, error) {
 		backups, err := client.ListBackups(ctx, input.Node, input.Storage)
 		if err != nil {

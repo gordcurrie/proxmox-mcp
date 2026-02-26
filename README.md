@@ -161,6 +161,49 @@ Create `.vscode/mcp.json` in your workspace (already gitignored):
 
 Then open the Copilot chat panel, switch to **Agent** mode, and the `proxmox-mcp` server will appear in the available tools.
 
+## Claude Desktop configuration
+
+Add the server to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
+```json
+{
+  "mcpServers": {
+    "proxmox-mcp": {
+      "command": "/path/to/proxmox-mcp/bin/proxmox-mcp",
+      "env": {
+        "PROXMOX_API_URL": "https://pve:8006/api2/json",
+        "PROXMOX_TOKEN_ID": "root@pam!mcp",
+        "PROXMOX_TOKEN_SECRET": "your-token-secret"
+      }
+    }
+  }
+}
+```
+
+Restart Claude Desktop after saving the config — the Proxmox tools will appear in the tool selector.
+
+## OpenCode configuration
+
+Add the server to `opencode.json` in your project root (or `~/.config/opencode/opencode.json` for global config):
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "proxmox-mcp": {
+      "type": "local",
+      "command": ["/path/to/proxmox-mcp/bin/proxmox-mcp"],
+      "enabled": true,
+      "environment": {
+        "PROXMOX_API_URL": "https://pve:8006/api2/json",
+        "PROXMOX_TOKEN_ID": "root@pam!mcp",
+        "PROXMOX_TOKEN_SECRET": "your-token-secret"
+      }
+    }
+  }
+}
+```
+
 ## Development
 
 ```bash

@@ -16,6 +16,7 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "list_containers",
 		Description: "List all LXC containers on a Proxmox node.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input listContainersInput) (*mcp.CallToolResult, any, error) {
 		containers, err := client.ListContainers(ctx, input.Node)
 		if err != nil {
@@ -32,6 +33,7 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_container_status",
 		Description: "Get the current status of an LXC container.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input containerInput) (*mcp.CallToolResult, any, error) {
 		status, err := client.GetContainerStatus(ctx, input.Node, input.VMID)
 		if err != nil {
@@ -146,6 +148,7 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_container_config",
 		Description: "Get the full configuration of an LXC container.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input containerInput) (*mcp.CallToolResult, any, error) {
 		config, err := client.GetContainerConfig(ctx, input.Node, input.VMID)
 		if err != nil {

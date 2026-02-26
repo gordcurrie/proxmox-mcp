@@ -14,6 +14,7 @@ func registerNodeTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "list_nodes",
 		Description: "List all nodes in the Proxmox VE cluster.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ listNodesInput) (*mcp.CallToolResult, any, error) {
 		nodes, err := client.ListNodes(ctx)
 		if err != nil {
@@ -28,6 +29,7 @@ func registerNodeTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_node_status",
 		Description: "Get detailed status of a specific Proxmox node.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input nodeInput) (*mcp.CallToolResult, any, error) {
 		status, err := client.GetNodeStatus(ctx, input.Node)
 		if err != nil {
@@ -39,6 +41,7 @@ func registerNodeTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "list_node_storage",
 		Description: "List all storage pools available on a Proxmox node.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input nodeInput) (*mcp.CallToolResult, any, error) {
 		storage, err := client.ListNodeStorage(ctx, input.Node)
 		if err != nil {
@@ -54,6 +57,7 @@ func registerNodeTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "list_node_tasks",
 		Description: "List recent tasks for a Proxmox node.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input listNodeTasksInput) (*mcp.CallToolResult, any, error) {
 		if input.Limit < 0 {
 			return nil, nil, fmt.Errorf("list_node_tasks: limit must be >= 0, got %d", input.Limit)
@@ -68,6 +72,7 @@ func registerNodeTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_node_disks",
 		Description: "List physical disks detected on a Proxmox node.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input nodeInput) (*mcp.CallToolResult, any, error) {
 		disks, err := client.GetNodeDisks(ctx, input.Node)
 		if err != nil {
