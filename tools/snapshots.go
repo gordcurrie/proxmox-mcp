@@ -31,6 +31,7 @@ func registerSnapshotTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "list_vm_snapshots",
 		Description: "List all snapshots for a QEMU VM.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input listVMSnapsInput) (*mcp.CallToolResult, any, error) {
 		snaps, err := client.ListVMSnapshots(ctx, input.Node, input.VMID)
 		if err != nil {
@@ -97,6 +98,7 @@ func registerSnapshotTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "list_container_snapshots",
 		Description: "List all snapshots for an LXC container.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input listCTSnapsInput) (*mcp.CallToolResult, any, error) {
 		snaps, err := client.ListContainerSnapshots(ctx, input.Node, input.VMID)
 		if err != nil {

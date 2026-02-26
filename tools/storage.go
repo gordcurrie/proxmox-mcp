@@ -18,6 +18,7 @@ func registerStorageTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "list_storage_content",
 		Description: "List the contents of a storage pool on a Proxmox node. Use the content filter to discover ISOs (iso), container templates (vztmpl), backups (backup), or disk images (images). Omit content to list all volumes.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input listStorageContentInput) (*mcp.CallToolResult, any, error) {
 		items, err := client.ListStorageContent(ctx, input.Node, input.Storage, input.Content)
 		if err != nil {
@@ -34,6 +35,7 @@ func registerStorageTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_storage_content_info",
 		Description: "Get detailed information about a specific volume in a Proxmox storage pool. volume is the full volid, e.g. local:iso/debian-12.iso.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input getStorageContentInfoInput) (*mcp.CallToolResult, any, error) {
 		info, err := client.GetStorageContentInfo(ctx, input.Node, input.Storage, input.Volume)
 		if err != nil {
