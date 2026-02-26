@@ -164,6 +164,9 @@ func (c *Client) RestoreContainer(ctx context.Context, node string, req *Restore
 	if req == nil {
 		return "", errors.New("RestoreContainer: req must not be nil")
 	}
+	// Always enforce restore=1 — this method exists solely for restores and the
+	// field must be set regardless of what the caller supplied.
+	req.Restore = 1
 	var upid string
 	path := "/nodes/" + url.PathEscape(node) + "/lxc"
 	if err := c.postWithBody(ctx, path, req, &upid); err != nil {

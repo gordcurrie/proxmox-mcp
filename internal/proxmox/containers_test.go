@@ -627,7 +627,11 @@ func TestRestoreContainer_success(t *testing.T) {
 			http.NotFound(w, r)
 			return
 		}
-		body, _ := io.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "read body", http.StatusInternalServerError)
+			return
+		}
 		var payload map[string]any
 		if err := json.Unmarshal(body, &payload); err != nil {
 			http.Error(w, "bad json", http.StatusBadRequest)

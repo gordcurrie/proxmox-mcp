@@ -251,7 +251,6 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 		req := proxmox.RestoreContainerRequest{
 			VMID:     input.VMID,
 			Archive:  input.Archive,
-			Restore:  1,
 			Storage:  input.Storage,
 			Hostname: input.Hostname,
 			Start:    start,
