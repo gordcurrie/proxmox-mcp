@@ -289,7 +289,7 @@ Both return a task UPID — poll with `get_task_status`.
 
 Tests: success + apiError for both client methods (4 new tests).
 
-### PR #14 — Node network (3 new tools)
+### PR #14 — Node network (2 new tools)
 
 Read-only tools to inspect node networking — required context before creating VMs or
 containers that need specific bridges. All three get `ReadOnlyHint: true`.
@@ -331,7 +331,7 @@ data is preserved).
 
 Tests: success + apiError for all three (6 new tests).
 
-**Phase 4 target tool count:** 49 + 8 = **57 tools** (54 always-on + 5 destructive opt-in).
+**Phase 4 target tool count:** 49 + 7 = **56 tools** (51 always-on + 5 destructive opt-in).
 
 ---
 
