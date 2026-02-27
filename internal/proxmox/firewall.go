@@ -83,7 +83,7 @@ func (c *Client) GetContainerFirewallOptions(ctx context.Context, node string, v
 // AddVMFirewallRule adds a firewall rule to the specified QEMU VM.
 // The rule is applied synchronously — no task UPID is returned.
 func (c *Client) AddVMFirewallRule(ctx context.Context, node string, vmid int, req *FirewallRuleRequest) error {
-	path := fmt.Sprintf("/nodes/%s/qemu/%d/firewall/rules", url.PathEscape(node), vmid)
+	path := "/nodes/" + url.PathEscape(node) + "/qemu/" + strconv.Itoa(vmid) + "/firewall/rules"
 	if err := c.postWithBody(ctx, path, req, nil); err != nil {
 		return fmt.Errorf("adding firewall rule to VM %d on node %s: %w", vmid, node, err)
 	}
@@ -94,7 +94,7 @@ func (c *Client) AddVMFirewallRule(ctx context.Context, node string, vmid int, r
 // DeleteVMFirewallRule removes the firewall rule at position pos from the
 // specified QEMU VM. Rule positions are zero-based.
 func (c *Client) DeleteVMFirewallRule(ctx context.Context, node string, vmid, pos int) error {
-	path := fmt.Sprintf("/nodes/%s/qemu/%d/firewall/rules/%d", url.PathEscape(node), vmid, pos)
+	path := "/nodes/" + url.PathEscape(node) + "/qemu/" + strconv.Itoa(vmid) + "/firewall/rules/" + strconv.Itoa(pos)
 	if err := c.delete(ctx, path, nil); err != nil {
 		return fmt.Errorf("deleting firewall rule %d from VM %d on node %s: %w", pos, vmid, node, err)
 	}
@@ -105,7 +105,7 @@ func (c *Client) DeleteVMFirewallRule(ctx context.Context, node string, vmid, po
 // AddContainerFirewallRule adds a firewall rule to the specified LXC container.
 // The rule is applied synchronously — no task UPID is returned.
 func (c *Client) AddContainerFirewallRule(ctx context.Context, node string, vmid int, req *FirewallRuleRequest) error {
-	path := fmt.Sprintf("/nodes/%s/lxc/%d/firewall/rules", url.PathEscape(node), vmid)
+	path := "/nodes/" + url.PathEscape(node) + "/lxc/" + strconv.Itoa(vmid) + "/firewall/rules"
 	if err := c.postWithBody(ctx, path, req, nil); err != nil {
 		return fmt.Errorf("adding firewall rule to container %d on node %s: %w", vmid, node, err)
 	}
@@ -116,7 +116,7 @@ func (c *Client) AddContainerFirewallRule(ctx context.Context, node string, vmid
 // DeleteContainerFirewallRule removes the firewall rule at position pos from
 // the specified LXC container. Rule positions are zero-based.
 func (c *Client) DeleteContainerFirewallRule(ctx context.Context, node string, vmid, pos int) error {
-	path := fmt.Sprintf("/nodes/%s/lxc/%d/firewall/rules/%d", url.PathEscape(node), vmid, pos)
+	path := "/nodes/" + url.PathEscape(node) + "/lxc/" + strconv.Itoa(vmid) + "/firewall/rules/" + strconv.Itoa(pos)
 	if err := c.delete(ctx, path, nil); err != nil {
 		return fmt.Errorf("deleting firewall rule %d from container %d on node %s: %w", pos, vmid, node, err)
 	}

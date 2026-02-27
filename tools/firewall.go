@@ -98,8 +98,8 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 
 	// ── Firewall write tools ──────────────────────────────────────────────────
 
-	type addFirewallRuleInput struct {
-		Node    string `json:"node"              jsonschema:"name of the node (e.g. pve)"`
+	type addVMFirewallRuleInput struct {
+		Node    string `json:"node"              jsonschema:"node the VM is on"`
 		VMID    int    `json:"vmid"              jsonschema:"numeric VM or container ID"`
 		Type    string `json:"type"              jsonschema:"rule direction: in or out"`
 		Action  string `json:"action"            jsonschema:"rule action: ACCEPT, DROP, or REJECT"`
@@ -116,7 +116,7 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "add_vm_firewall_rule",
 		Description: "Add a firewall rule to a specific QEMU VM. The rule takes effect immediately — no task UPID is returned.",
-	}, func(ctx context.Context, _ *mcp.CallToolRequest, input addFirewallRuleInput) (*mcp.CallToolResult, any, error) {
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input addVMFirewallRuleInput) (*mcp.CallToolResult, any, error) {
 		req := &proxmox.FirewallRuleRequest{
 			Type:    input.Type,
 			Action:  input.Action,
@@ -138,8 +138,8 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 		return textResult("firewall rule added to VM")
 	})
 
-	type deleteFirewallRuleInput struct {
-		Node string `json:"node" jsonschema:"name of the node (e.g. pve)"`
+	type deleteVMFirewallRuleInput struct {
+		Node string `json:"node" jsonschema:"node the VM is on"`
 		VMID int    `json:"vmid" jsonschema:"numeric VM or container ID"`
 		Pos  int    `json:"pos"  jsonschema:"zero-based position of the rule to delete (use list_vm_firewall_rules to find positions)"`
 	}
@@ -147,15 +147,15 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "delete_vm_firewall_rule",
 		Description: "Delete a firewall rule from a specific QEMU VM by its position. Use list_vm_firewall_rules to find rule positions (zero-based).",
-	}, func(ctx context.Context, _ *mcp.CallToolRequest, input deleteFirewallRuleInput) (*mcp.CallToolResult, any, error) {
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input deleteVMFirewallRuleInput) (*mcp.CallToolResult, any, error) {
 		if err := client.DeleteVMFirewallRule(ctx, input.Node, input.VMID, input.Pos); err != nil {
 			return nil, nil, fmt.Errorf("delete_vm_firewall_rule: %w", err)
 		}
 		return textResult("firewall rule deleted from VM")
 	})
 
-	type addCtFirewallRuleInput struct {
-		Node    string `json:"node"              jsonschema:"name of the node (e.g. pve)"`
+	type addCTFirewallRuleInput struct {
+		Node    string `json:"node"              jsonschema:"node the container is on"`
 		VMID    int    `json:"vmid"              jsonschema:"numeric container ID"`
 		Type    string `json:"type"              jsonschema:"rule direction: in or out"`
 		Action  string `json:"action"            jsonschema:"rule action: ACCEPT, DROP, or REJECT"`
@@ -172,7 +172,7 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "add_container_firewall_rule",
 		Description: "Add a firewall rule to a specific LXC container. The rule takes effect immediately — no task UPID is returned.",
-	}, func(ctx context.Context, _ *mcp.CallToolRequest, input addCtFirewallRuleInput) (*mcp.CallToolResult, any, error) {
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input addCTFirewallRuleInput) (*mcp.CallToolResult, any, error) {
 		req := &proxmox.FirewallRuleRequest{
 			Type:    input.Type,
 			Action:  input.Action,
@@ -194,8 +194,8 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 		return textResult("firewall rule added to container")
 	})
 
-	type deleteCtFirewallRuleInput struct {
-		Node string `json:"node" jsonschema:"name of the node (e.g. pve)"`
+	type deleteCTFirewallRuleInput struct {
+		Node string `json:"node" jsonschema:"node the container is on"`
 		VMID int    `json:"vmid" jsonschema:"numeric container ID"`
 		Pos  int    `json:"pos"  jsonschema:"zero-based position of the rule to delete (use list_container_firewall_rules to find positions)"`
 	}
@@ -203,7 +203,7 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "delete_container_firewall_rule",
 		Description: "Delete a firewall rule from a specific LXC container by its position. Use list_container_firewall_rules to find rule positions (zero-based).",
-	}, func(ctx context.Context, _ *mcp.CallToolRequest, input deleteCtFirewallRuleInput) (*mcp.CallToolResult, any, error) {
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input deleteCTFirewallRuleInput) (*mcp.CallToolResult, any, error) {
 		if err := client.DeleteContainerFirewallRule(ctx, input.Node, input.VMID, input.Pos); err != nil {
 			return nil, nil, fmt.Errorf("delete_container_firewall_rule: %w", err)
 		}
