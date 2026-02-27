@@ -83,4 +83,40 @@ func registerDestructiveTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		return taskResult(upid)
 	})
+
+	type nodeCommandInput struct {
+		Node      string `json:"node"      jsonschema:"name of the node (e.g. pve)"`
+		Confirmed bool   `json:"confirmed" jsonschema:"must be set to true to confirm the operation"`
+	}
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "reboot_node",
+		Description: "Reboot an entire Proxmox node. This takes down all VMs and containers on the node. Set confirmed=true to proceed.",
+		Annotations: &mcp.ToolAnnotations{
+			DestructiveHint: &destructiveHint,
+		},
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input nodeCommandInput) (*mcp.CallToolResult, any, error) {
+		if !input.Confirmed {
+			return nil, nil, errors.New("reboot_node: confirmed must be true to proceed")
+		}
+		if err := client.NodeCommand(ctx, input.Node, "reboot"); err != nil {
+			return nil, nil, fmt.Errorf("reboot_node: %w", err)
+		}
+		return textResult("Reboot command sent to node " + input.Node)
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "shutdown_node",
+		Description: "Shut down an entire Proxmox node. This takes down all VMs and containers on the node. Set confirmed=true to proceed.",
+		Annotations: &mcp.ToolAnnotations{
+			DestructiveHint: &destructiveHint,
+		},
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input nodeCommandInput) (*mcp.CallToolResult, any, error) {
+		if !input.Confirmed {
+			return nil, nil, errors.New("shutdown_node: confirmed must be true to proceed")
+		}
+		if err := client.NodeCommand(ctx, input.Node, "shutdown"); err != nil {
+			return nil, nil, fmt.Errorf("shutdown_node: %w", err)
+		}
+		return textResult("Shutdown command sent to node " + input.Node)
+	})
 }

@@ -304,7 +304,7 @@ New file `internal/proxmox/network.go`. New file `tools/network.go`.
 
 Tests: success + notFound for each (4 new tests).
 
-### PR #15 — Node power + disk move (3 new tools)
+### PR #15 — Node power + disk move (3 new tools) ✅
 
 Node-level power management and VM disk relocation. Two distinct API areas bundled because
 both are small and share the same PR quality overhead.
@@ -334,6 +334,7 @@ Tests: success + apiError for all three (6 new tests).
 **Phase 4 target tool count:** 49 + 7 = **56 tools** (51 always-on + 5 destructive opt-in).
 Running total after PR #13: **51 tools** (48 always-on + 3 destructive opt-in).
 Running total after PR #14: **53 tools** (50 always-on + 3 destructive opt-in).
+Running total after PR #15: **56 tools** (51 always-on + 5 destructive opt-in).
 
 ---
 

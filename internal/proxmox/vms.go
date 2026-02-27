@@ -206,3 +206,18 @@ func (c *Client) MigrateVM(ctx context.Context, node string, vmid int, req *Migr
 	}
 	return upid, nil
 }
+
+// MoveVMDisk moves a disk attached to a QEMU VM to a different storage pool.
+// It returns the UPID of the asynchronous task. If req.DeleteSource is set to 1
+// the source volume is removed after the move completes successfully.
+func (c *Client) MoveVMDisk(ctx context.Context, node string, vmid int, req *MoveVMDiskRequest) (string, error) {
+	if req == nil {
+		return "", errors.New("MoveVMDisk: req must not be nil")
+	}
+	var upid string
+	path := "/nodes/" + url.PathEscape(node) + "/qemu/" + strconv.Itoa(vmid) + "/move_disk"
+	if err := c.postWithBody(ctx, path, req, &upid); err != nil {
+		return "", fmt.Errorf("moving disk %s on VM %d on node %s: %w", req.Disk, vmid, node, err)
+	}
+	return upid, nil
+}

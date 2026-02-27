@@ -730,3 +730,70 @@ func TestRestoreVM_apiError(t *testing.T) {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
+
+const testMoveVMDiskUPID = "UPID:pve1:000015E3:00000000:60F4B3A7:move_disk:100:root@pam:"
+
+func TestMoveVMDisk_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "want POST", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/qemu/100/move_disk" {
+			http.NotFound(w, r)
+			return
+		}
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "read body", http.StatusInternalServerError)
+			return
+		}
+		var payload map[string]any
+		if err := json.Unmarshal(body, &payload); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		if payload["disk"] != "scsi0" {
+			http.Error(w, "wrong disk", http.StatusBadRequest)
+			return
+		}
+		if payload["storage"] != "local-lvm" {
+			http.Error(w, "wrong storage", http.StatusBadRequest)
+			return
+		}
+		if payload["delete"] != float64(1) {
+			http.Error(w, "delete should be 1", http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, testMoveVMDiskUPID))
+	}))
+	defer srv.Close()
+
+	delSrc := 1
+	req := MoveVMDiskRequest{Disk: "scsi0", Storage: "local-lvm", DeleteSource: &delSrc}
+	upid, err := newTestClient(t, srv.URL).MoveVMDisk(context.Background(), "pve1", 100, &req)
+	if err != nil {
+		t.Fatalf("MoveVMDisk: %v", err)
+	}
+	if upid != testMoveVMDiskUPID {
+		t.Errorf("upid: got %q, want %q", upid, testMoveVMDiskUPID)
+	}
+}
+
+func TestMoveVMDisk_apiError(t *testing.T) {
+	t.Parallel()
+	srv := vmErrorServer(t)
+	defer srv.Close()
+	req := MoveVMDiskRequest{Disk: "scsi0", Storage: "local-lvm"}
+	_, err := newTestClient(t, srv.URL).MoveVMDisk(context.Background(), "pve1", 100, &req)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
+	}
+}

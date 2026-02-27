@@ -281,4 +281,30 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		return taskResult(upid)
 	})
+
+	type moveVMDiskInput struct {
+		Node         string `json:"node"                    jsonschema:"node the VM is on"`
+		VMID         int    `json:"vmid"                    jsonschema:"numeric VM ID"`
+		Disk         string `json:"disk"                    jsonschema:"disk to move, e.g. scsi0"`
+		Storage      string `json:"storage"                 jsonschema:"destination storage pool"`
+		DeleteSource bool   `json:"delete_source,omitempty" jsonschema:"true to delete the source volume after a successful move (default false)"`
+	}
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "move_vm_disk",
+		Description: "Move a QEMU VM disk to a different storage pool. Returns the async task ID — use get_task_status to poll for completion. Optionally set delete_source=true to remove the original volume after the move.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input moveVMDiskInput) (*mcp.CallToolResult, any, error) {
+		req := proxmox.MoveVMDiskRequest{
+			Disk:    input.Disk,
+			Storage: input.Storage,
+		}
+		if input.DeleteSource {
+			v := 1
+			req.DeleteSource = &v
+		}
+		upid, err := client.MoveVMDisk(ctx, input.Node, input.VMID, &req)
+		if err != nil {
+			return nil, nil, fmt.Errorf("move_vm_disk: %w", err)
+		}
+		return taskResult(upid)
+	})
 }
