@@ -100,7 +100,7 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 
 	type addVMFirewallRuleInput struct {
 		Node    string `json:"node"              jsonschema:"node the VM is on"`
-		VMID    int    `json:"vmid"              jsonschema:"numeric VM or container ID"`
+		VMID    int    `json:"vmid"              jsonschema:"numeric VM ID"`
 		Type    string `json:"type"              jsonschema:"rule direction: in or out"`
 		Action  string `json:"action"            jsonschema:"rule action: ACCEPT, DROP, or REJECT"`
 		Proto   string `json:"proto,omitempty"   jsonschema:"protocol: tcp, udp, icmp, etc."`
@@ -140,7 +140,7 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 
 	type deleteVMFirewallRuleInput struct {
 		Node string `json:"node" jsonschema:"node the VM is on"`
-		VMID int    `json:"vmid" jsonschema:"numeric VM or container ID"`
+		VMID int    `json:"vmid" jsonschema:"numeric VM ID"`
 		Pos  int    `json:"pos"  jsonschema:"zero-based position of the rule to delete (use list_vm_firewall_rules to find positions)"`
 	}
 
