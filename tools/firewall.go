@@ -35,7 +35,7 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 	})
 
 	type vmFirewallInput struct {
-		Node string `json:"node" jsonschema:"name of the node (e.g. pve)"`
+		Node string `json:"node" jsonschema:"node the VM is on"`
 		VMID int    `json:"vmid" jsonschema:"numeric VM ID"`
 	}
 
@@ -64,7 +64,7 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 	})
 
 	type ctFirewallInput struct {
-		Node string `json:"node" jsonschema:"name of the node (e.g. pve)"`
+		Node string `json:"node" jsonschema:"node the container is on"`
 		VMID int    `json:"vmid" jsonschema:"numeric container ID"`
 	}
 

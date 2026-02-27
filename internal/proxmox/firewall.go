@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strconv"
 )
 
 // ListClusterFirewallRules returns all firewall rules defined at the datacenter
@@ -30,7 +31,7 @@ func (c *Client) GetClusterFirewallOptions(ctx context.Context) (map[string]any,
 
 // ListVMFirewallRules returns all firewall rules for the specified QEMU VM.
 func (c *Client) ListVMFirewallRules(ctx context.Context, node string, vmid int) ([]map[string]any, error) {
-	path := fmt.Sprintf("/nodes/%s/qemu/%d/firewall/rules", url.PathEscape(node), vmid)
+	path := "/nodes/" + url.PathEscape(node) + "/qemu/" + strconv.Itoa(vmid) + "/firewall/rules"
 
 	var result []map[string]any
 	if err := c.get(ctx, path, &result); err != nil {
@@ -43,7 +44,7 @@ func (c *Client) ListVMFirewallRules(ctx context.Context, node string, vmid int)
 // GetVMFirewallOptions returns the firewall policy options for the specified
 // QEMU VM.
 func (c *Client) GetVMFirewallOptions(ctx context.Context, node string, vmid int) (map[string]any, error) {
-	path := fmt.Sprintf("/nodes/%s/qemu/%d/firewall/options", url.PathEscape(node), vmid)
+	path := "/nodes/" + url.PathEscape(node) + "/qemu/" + strconv.Itoa(vmid) + "/firewall/options"
 
 	var result map[string]any
 	if err := c.get(ctx, path, &result); err != nil {
@@ -56,7 +57,7 @@ func (c *Client) GetVMFirewallOptions(ctx context.Context, node string, vmid int
 // ListContainerFirewallRules returns all firewall rules for the specified LXC
 // container.
 func (c *Client) ListContainerFirewallRules(ctx context.Context, node string, vmid int) ([]map[string]any, error) {
-	path := fmt.Sprintf("/nodes/%s/lxc/%d/firewall/rules", url.PathEscape(node), vmid)
+	path := "/nodes/" + url.PathEscape(node) + "/lxc/" + strconv.Itoa(vmid) + "/firewall/rules"
 
 	var result []map[string]any
 	if err := c.get(ctx, path, &result); err != nil {
@@ -69,7 +70,7 @@ func (c *Client) ListContainerFirewallRules(ctx context.Context, node string, vm
 // GetContainerFirewallOptions returns the firewall policy options for the
 // specified LXC container.
 func (c *Client) GetContainerFirewallOptions(ctx context.Context, node string, vmid int) (map[string]any, error) {
-	path := fmt.Sprintf("/nodes/%s/lxc/%d/firewall/options", url.PathEscape(node), vmid)
+	path := "/nodes/" + url.PathEscape(node) + "/lxc/" + strconv.Itoa(vmid) + "/firewall/options"
 
 	var result map[string]any
 	if err := c.get(ctx, path, &result); err != nil {
