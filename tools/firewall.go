@@ -95,4 +95,118 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		return jsonResult(opts)
 	})
+
+	// ── Firewall write tools ──────────────────────────────────────────────────
+
+	type addVMFirewallRuleInput struct {
+		Node    string `json:"node"              jsonschema:"node the VM is on"`
+		VMID    int    `json:"vmid"              jsonschema:"numeric VM ID"`
+		Type    string `json:"type"              jsonschema:"rule direction: in or out"`
+		Action  string `json:"action"            jsonschema:"rule action: ACCEPT, DROP, or REJECT"`
+		Proto   string `json:"proto,omitempty"   jsonschema:"protocol: tcp, udp, icmp, etc."`
+		DPort   string `json:"dport,omitempty"   jsonschema:"destination port or range, e.g. 22 or 80:443"`
+		Sport   string `json:"sport,omitempty"   jsonschema:"source port or range"`
+		Source  string `json:"source,omitempty"  jsonschema:"source IP/CIDR/IPSet/alias (in-rules)"`
+		Dest    string `json:"dest,omitempty"    jsonschema:"destination IP/CIDR/IPSet/alias (out-rules)"`
+		IFace   string `json:"iface,omitempty"   jsonschema:"restrict rule to this network interface name"`
+		Comment string `json:"comment,omitempty" jsonschema:"human-readable description of the rule"`
+		Enable  bool   `json:"enable,omitempty"  jsonschema:"set to true to explicitly mark the rule as enabled (default: Proxmox enables rules automatically)"`
+	}
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "add_vm_firewall_rule",
+		Description: "Add a firewall rule to a specific QEMU VM. The rule takes effect immediately — no task UPID is returned.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input addVMFirewallRuleInput) (*mcp.CallToolResult, any, error) {
+		req := &proxmox.FirewallRuleRequest{
+			Type:    input.Type,
+			Action:  input.Action,
+			Proto:   input.Proto,
+			DPort:   input.DPort,
+			Sport:   input.Sport,
+			Source:  input.Source,
+			Dest:    input.Dest,
+			IFace:   input.IFace,
+			Comment: input.Comment,
+		}
+		if input.Enable {
+			v := 1
+			req.Enable = &v
+		}
+		if err := client.AddVMFirewallRule(ctx, input.Node, input.VMID, req); err != nil {
+			return nil, nil, fmt.Errorf("add_vm_firewall_rule: %w", err)
+		}
+		return textResult("firewall rule added to VM")
+	})
+
+	type deleteVMFirewallRuleInput struct {
+		Node string `json:"node" jsonschema:"node the VM is on"`
+		VMID int    `json:"vmid" jsonschema:"numeric VM ID"`
+		Pos  int    `json:"pos"  jsonschema:"zero-based position of the rule to delete (use list_vm_firewall_rules to find positions)"`
+	}
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "delete_vm_firewall_rule",
+		Description: "Delete a firewall rule from a specific QEMU VM by its position. Use list_vm_firewall_rules to find rule positions (zero-based).",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input deleteVMFirewallRuleInput) (*mcp.CallToolResult, any, error) {
+		if err := client.DeleteVMFirewallRule(ctx, input.Node, input.VMID, input.Pos); err != nil {
+			return nil, nil, fmt.Errorf("delete_vm_firewall_rule: %w", err)
+		}
+		return textResult("firewall rule deleted from VM")
+	})
+
+	type addCTFirewallRuleInput struct {
+		Node    string `json:"node"              jsonschema:"node the container is on"`
+		VMID    int    `json:"vmid"              jsonschema:"numeric container ID"`
+		Type    string `json:"type"              jsonschema:"rule direction: in or out"`
+		Action  string `json:"action"            jsonschema:"rule action: ACCEPT, DROP, or REJECT"`
+		Proto   string `json:"proto,omitempty"   jsonschema:"protocol: tcp, udp, icmp, etc."`
+		DPort   string `json:"dport,omitempty"   jsonschema:"destination port or range, e.g. 22 or 80:443"`
+		Sport   string `json:"sport,omitempty"   jsonschema:"source port or range"`
+		Source  string `json:"source,omitempty"  jsonschema:"source IP/CIDR/IPSet/alias (in-rules)"`
+		Dest    string `json:"dest,omitempty"    jsonschema:"destination IP/CIDR/IPSet/alias (out-rules)"`
+		IFace   string `json:"iface,omitempty"   jsonschema:"restrict rule to this network interface name"`
+		Comment string `json:"comment,omitempty" jsonschema:"human-readable description of the rule"`
+		Enable  bool   `json:"enable,omitempty"  jsonschema:"set to true to explicitly mark the rule as enabled (default: Proxmox enables rules automatically)"`
+	}
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "add_container_firewall_rule",
+		Description: "Add a firewall rule to a specific LXC container. The rule takes effect immediately — no task UPID is returned.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input addCTFirewallRuleInput) (*mcp.CallToolResult, any, error) {
+		req := &proxmox.FirewallRuleRequest{
+			Type:    input.Type,
+			Action:  input.Action,
+			Proto:   input.Proto,
+			DPort:   input.DPort,
+			Sport:   input.Sport,
+			Source:  input.Source,
+			Dest:    input.Dest,
+			IFace:   input.IFace,
+			Comment: input.Comment,
+		}
+		if input.Enable {
+			v := 1
+			req.Enable = &v
+		}
+		if err := client.AddContainerFirewallRule(ctx, input.Node, input.VMID, req); err != nil {
+			return nil, nil, fmt.Errorf("add_container_firewall_rule: %w", err)
+		}
+		return textResult("firewall rule added to container")
+	})
+
+	type deleteCTFirewallRuleInput struct {
+		Node string `json:"node" jsonschema:"node the container is on"`
+		VMID int    `json:"vmid" jsonschema:"numeric container ID"`
+		Pos  int    `json:"pos"  jsonschema:"zero-based position of the rule to delete (use list_container_firewall_rules to find positions)"`
+	}
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "delete_container_firewall_rule",
+		Description: "Delete a firewall rule from a specific LXC container by its position. Use list_container_firewall_rules to find rule positions (zero-based).",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input deleteCTFirewallRuleInput) (*mcp.CallToolResult, any, error) {
+		if err := client.DeleteContainerFirewallRule(ctx, input.Node, input.VMID, input.Pos); err != nil {
+			return nil, nil, fmt.Errorf("delete_container_firewall_rule: %w", err)
+		}
+		return textResult("firewall rule deleted from container")
+	})
 }
