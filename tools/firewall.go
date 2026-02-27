@@ -10,11 +10,13 @@ import (
 
 // registerFirewallTools adds read-only firewall MCP tools to the server.
 func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
+	type listClusterFirewallRulesInput struct{}
+
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "list_cluster_firewall_rules",
 		Description: "List all firewall rules defined at the datacenter (cluster) level.",
 		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
-	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ struct{}) (*mcp.CallToolResult, any, error) {
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ listClusterFirewallRulesInput) (*mcp.CallToolResult, any, error) {
 		rules, err := client.ListClusterFirewallRules(ctx)
 		if err != nil {
 			return nil, nil, fmt.Errorf("list_cluster_firewall_rules: %w", err)
@@ -22,11 +24,13 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 		return jsonResult(rules)
 	})
 
+	type getClusterFirewallOptionsInput struct{}
+
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_cluster_firewall_options",
 		Description: "Get the firewall policy options for the datacenter (cluster) level, including default input/output policies and logging settings.",
 		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
-	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ struct{}) (*mcp.CallToolResult, any, error) {
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ getClusterFirewallOptionsInput) (*mcp.CallToolResult, any, error) {
 		opts, err := client.GetClusterFirewallOptions(ctx)
 		if err != nil {
 			return nil, nil, fmt.Errorf("get_cluster_firewall_options: %w", err)
