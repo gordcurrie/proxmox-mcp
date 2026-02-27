@@ -338,6 +338,86 @@ Running total after PR #15: **56 tools** (51 always-on + 5 destructive opt-in).
 
 ---
 
+## Phase 5 — Firewall visibility & mutation, pool management (target: v0.5.0)
+
+Adds security policy inspection and mutation across all resource levels, plus cluster pool
+CRUD to round out resource organisation. Delivered across 3 PRs.
+
+### PR #17 — Firewall read-only (all levels)
+
+Six read-only tools covering the three firewall scopes Proxmox exposes: cluster (datacenter),
+per-VM, and per-container. All get `ReadOnlyHint: true`. No new HTTP primitives — all use
+the existing `get()` client method.
+
+New file `internal/proxmox/firewall.go`. New file `tools/firewall.go`.
+`RegisterAll` gains `registerFirewallTools`.
+
+| Tool | API endpoint | Params |
+|---|---|---|
+| `list_cluster_firewall_rules` | `GET /cluster/firewall/rules` | — |
+| `get_cluster_firewall_options` | `GET /cluster/firewall/options` | — |
+| `list_vm_firewall_rules` | `GET /nodes/{node}/qemu/{vmid}/firewall/rules` | `node`, `vmid` |
+| `get_vm_firewall_options` | `GET /nodes/{node}/qemu/{vmid}/firewall/options` | `node`, `vmid` |
+| `list_container_firewall_rules` | `GET /nodes/{node}/lxc/{vmid}/firewall/rules` | `node`, `vmid` |
+| `get_container_firewall_options` | `GET /nodes/{node}/lxc/{vmid}/firewall/options` | `node`, `vmid` |
+
+Tests: success + notFound for each (12 new tests).
+
+### PR #18 — Firewall write (VM + container rule mutation)
+
+Adds and removes per-VM and per-container firewall rules. Uses existing `postWithBody` for
+add and `delete` for remove. Rules are addressed by zero-based position (`pos`) for deletion.
+
+New `FirewallRuleRequest` struct in `types.go` with full Proxmox rule fields: `type`
+(in/out), `action` (ACCEPT/DROP/REJECT), `enable`, `iface`, `source`, `dest`, `proto`,
+`dport`, `sport`, `comment`. Fields use `omitempty` — only set fields are sent.
+
+`delete_vm_firewall_rule` and `delete_container_firewall_rule` are not gated behind
+`PROXMOX_ALLOW_DESTRUCTIVE` — individual rule deletion is low-risk and reversible.
+
+| Tool | API endpoint | Params |
+|---|---|---|
+| `add_vm_firewall_rule` | `POST /nodes/{node}/qemu/{vmid}/firewall/rules` | `node`, `vmid`, `type`, `action`, `enable`, `iface`, `source`, `dest`, `proto`, `dport`, `sport`, `comment` |
+| `delete_vm_firewall_rule` | `DELETE /nodes/{node}/qemu/{vmid}/firewall/rules/{pos}` | `node`, `vmid`, `pos` |
+| `add_container_firewall_rule` | `POST /nodes/{node}/lxc/{vmid}/firewall/rules` | `node`, `vmid`, `type`, `action`, `enable`, `iface`, `source`, `dest`, `proto`, `dport`, `sport`, `comment` |
+| `delete_container_firewall_rule` | `DELETE /nodes/{node}/lxc/{vmid}/firewall/rules/{pos}` | `node`, `vmid`, `pos` |
+
+Tests: success + apiError for add; success + notFound for delete (8 new tests).
+
+### PR #19 — Pool management
+
+Cluster resource pools group VMs and storage for access control and organisation. Four
+always-on tools plus one destructive opt-in. All use existing HTTP primitives.
+
+New file `internal/proxmox/pools.go`. Pool tools added to a new `tools/pools.go`.
+`RegisterAll` gains `registerPoolTools`.
+
+`delete_pool` follows the same 3-layer safety pattern as `delete_vm` (env var +
+`confirmed: true` + `DestructiveHint: true`), registered only when
+`PROXMOX_ALLOW_DESTRUCTIVE=true`.
+
+`update_pool` uses `PUT /cluster/pools/{poolid}` and supports adding/removing VMs and
+storage from the pool via comma-separated ID lists. Set `delete: true` in the request to
+remove the listed members instead of adding them.
+
+| Tool | API endpoint | Params |
+|---|---|---|
+| `list_pools` | `GET /cluster/pools` | — |
+| `get_pool` | `GET /cluster/pools/{poolid}` | `poolid` |
+| `create_pool` | `POST /cluster/pools` | `poolid`, `comment` (optional) |
+| `update_pool` | `PUT /cluster/pools/{poolid}` | `poolid`, `comment`, `vms` (comma-sep vmids), `storage` (comma-sep), `delete` (bool — remove listed members instead of add) |
+| `delete_pool` | `DELETE /cluster/pools/{poolid}` | `poolid`, `confirmed` (must be `true`) |
+
+Tests: success + notFound for list/get; success + apiError for create/update/delete
+(10 new tests).
+
+**Phase 5 target tool count:** 56 + 15 = **71 tools** (65 always-on + 6 destructive opt-in).
+Running total after PR #17: **62 tools** (57 always-on + 5 destructive opt-in).
+Running total after PR #18: **66 tools** (61 always-on + 5 destructive opt-in).
+Running total after PR #19: **71 tools** (65 always-on + 6 destructive opt-in).
+
+---
+
 ## Proxmox API Notes
 
 - Base URL: `https://<host>:8006/api2/json`
