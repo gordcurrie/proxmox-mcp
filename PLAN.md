@@ -289,10 +289,10 @@ Both return a task UPID — poll with `get_task_status`.
 
 Tests: success + apiError for both client methods (4 new tests).
 
-### PR #14 — Node network (2 new tools)
+### PR #14 — Node network (2 new tools) ✅
 
 Read-only tools to inspect node networking — required context before creating VMs or
-containers that need specific bridges. All three get `ReadOnlyHint: true`.
+containers that need specific bridges. Both get `ReadOnlyHint: true`.
 
 New file `internal/proxmox/network.go`. New file `tools/network.go`.
 `RegisterAll` gains `registerNetworkTools`.
@@ -333,6 +333,7 @@ Tests: success + apiError for all three (6 new tests).
 
 **Phase 4 target tool count:** 49 + 7 = **56 tools** (51 always-on + 5 destructive opt-in).
 Running total after PR #13: **51 tools** (48 always-on + 3 destructive opt-in).
+Running total after PR #14: **53 tools** (50 always-on + 3 destructive opt-in).
 
 ---
 

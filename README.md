@@ -75,6 +75,13 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 |---|---|---|
 | `get_task_status` | Poll the status of an async task | `node`, `upid` |
 
+### Network
+
+| Tool | Description | Parameters |
+|---|---|---|
+| `list_node_network` | List network interfaces on a node | `node`, `type` (optional: `bridge`, `bond`, `eth`, `alias`, `vlan`, `OVSBridge`, `OVSBond`, `OVSPort`, `OVSIntPort`, `any_bridge`) |
+| `get_node_network_interface` | Get configuration of a specific network interface | `node`, `iface` (e.g. `vmbr0`) |
+
 ### Storage Content
 
 | Tool | Description | Parameters |
