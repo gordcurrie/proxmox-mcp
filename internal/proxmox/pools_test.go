@@ -16,7 +16,7 @@ func TestListPools_success(t *testing.T) {
 		{PoolID: "prod", Comment: "Production pool"},
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/cluster/pools" {
+		if r.URL.Path != "/pools" {
 			http.NotFound(w, r)
 			return
 		}
@@ -63,7 +63,7 @@ func TestGetPool_success(t *testing.T) {
 		},
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/cluster/pools/dev" {
+		if r.URL.Path != "/pools/dev" {
 			http.NotFound(w, r)
 			return
 		}
@@ -109,7 +109,7 @@ func TestCreatePool_success(t *testing.T) {
 			http.Error(w, "want POST", http.StatusMethodNotAllowed)
 			return
 		}
-		if r.URL.Path != "/cluster/pools" {
+		if r.URL.Path != "/pools" {
 			http.NotFound(w, r)
 			return
 		}
@@ -147,7 +147,7 @@ func TestUpdatePool_success(t *testing.T) {
 			http.Error(w, "want PUT", http.StatusMethodNotAllowed)
 			return
 		}
-		if r.URL.Path != "/cluster/pools/dev" {
+		if r.URL.Path != "/pools/dev" {
 			http.NotFound(w, r)
 			return
 		}
@@ -185,7 +185,7 @@ func TestDeletePool_success(t *testing.T) {
 			http.Error(w, "want DELETE", http.StatusMethodNotAllowed)
 			return
 		}
-		if r.URL.Path != "/cluster/pools/old-pool" {
+		if r.URL.Path != "/pools/old-pool" {
 			http.NotFound(w, r)
 			return
 		}
