@@ -295,6 +295,23 @@ type MoveVMDiskRequest struct {
 	DeleteSource *int   `json:"delete,omitempty"` // nil = omit; 1 = delete source after move
 }
 
+// FirewallRuleRequest is the request body for adding a firewall rule via
+// POST /nodes/{node}/qemu/{vmid}/firewall/rules or
+// POST /nodes/{node}/lxc/{vmid}/firewall/rules.
+// Only set the fields you need — omitempty ensures the rest are omitted.
+type FirewallRuleRequest struct {
+	Type    string `json:"type"`              // "in" or "out"
+	Action  string `json:"action"`            // "ACCEPT", "DROP", "REJECT", or a security-group name
+	Enable  *int   `json:"enable,omitempty"`  // 1 = enabled, 0 = disabled; nil = omit (Proxmox defaults to enabled)
+	IFace   string `json:"iface,omitempty"`   // restrict rule to this network interface name
+	Source  string `json:"source,omitempty"`  // source IP/CIDR/IPSet/alias (in-rules only)
+	Dest    string `json:"dest,omitempty"`    // destination IP/CIDR/IPSet/alias (out-rules only)
+	Proto   string `json:"proto,omitempty"`   // protocol: tcp, udp, icmp, etc.
+	DPort   string `json:"dport,omitempty"`   // destination port or range, e.g. "22" or "80:443"
+	Sport   string `json:"sport,omitempty"`   // source port or range
+	Comment string `json:"comment,omitempty"` // human-readable description
+}
+
 // APIError represents an HTTP-level error returned by the Proxmox API.
 type APIError struct {
 	StatusCode int

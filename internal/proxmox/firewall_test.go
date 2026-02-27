@@ -260,3 +260,151 @@ func TestGetContainerFirewallOptions_notFound(t *testing.T) {
 		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }
+
+func TestAddVMFirewallRule_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "want POST", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/qemu/100/firewall/rules" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, nil))
+	}))
+	defer srv.Close()
+
+	req := &FirewallRuleRequest{Type: "in", Action: "ACCEPT", DPort: "22", Proto: "tcp"}
+	if err := newTestClient(t, srv.URL).AddVMFirewallRule(context.Background(), "pve1", 100, req); err != nil {
+		t.Fatalf("AddVMFirewallRule: %v", err)
+	}
+}
+
+func TestAddVMFirewallRule_apiError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "firewall error", http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	req := &FirewallRuleRequest{Type: "in", Action: "ACCEPT"}
+	err := newTestClient(t, srv.URL).AddVMFirewallRule(context.Background(), "pve1", 100, req)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestDeleteVMFirewallRule_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			http.Error(w, "want DELETE", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/qemu/100/firewall/rules/0" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, nil))
+	}))
+	defer srv.Close()
+
+	if err := newTestClient(t, srv.URL).DeleteVMFirewallRule(context.Background(), "pve1", 100, 0); err != nil {
+		t.Fatalf("DeleteVMFirewallRule: %v", err)
+	}
+}
+
+func TestDeleteVMFirewallRule_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	err := newTestClient(t, srv.URL).DeleteVMFirewallRule(context.Background(), "pve1", 9999, 0)
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestAddContainerFirewallRule_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "want POST", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/lxc/200/firewall/rules" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, nil))
+	}))
+	defer srv.Close()
+
+	req := &FirewallRuleRequest{Type: "in", Action: "ACCEPT", DPort: "80", Proto: "tcp"}
+	if err := newTestClient(t, srv.URL).AddContainerFirewallRule(context.Background(), "pve1", 200, req); err != nil {
+		t.Fatalf("AddContainerFirewallRule: %v", err)
+	}
+}
+
+func TestAddContainerFirewallRule_apiError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "firewall error", http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	req := &FirewallRuleRequest{Type: "in", Action: "ACCEPT"}
+	err := newTestClient(t, srv.URL).AddContainerFirewallRule(context.Background(), "pve1", 200, req)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestDeleteContainerFirewallRule_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			http.Error(w, "want DELETE", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/lxc/200/firewall/rules/1" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, nil))
+	}))
+	defer srv.Close()
+
+	if err := newTestClient(t, srv.URL).DeleteContainerFirewallRule(context.Background(), "pve1", 200, 1); err != nil {
+		t.Fatalf("DeleteContainerFirewallRule: %v", err)
+	}
+}
+
+func TestDeleteContainerFirewallRule_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	err := newTestClient(t, srv.URL).DeleteContainerFirewallRule(context.Background(), "pve1", 9999, 0)
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}

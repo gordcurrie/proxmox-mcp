@@ -363,7 +363,7 @@ New file `internal/proxmox/firewall.go`. New file `tools/firewall.go`.
 
 Tests: success + notFound for each (12 new tests).
 
-### PR #18 — Firewall write (VM + container rule mutation)
+### PR #18 — Firewall write (VM + container rule mutation) ✅
 
 Adds and removes per-VM and per-container firewall rules. Uses existing `postWithBody` for
 add and `delete` for remove. Rules are addressed by zero-based position (`pos`) for deletion.
@@ -413,7 +413,7 @@ Tests: success + notFound for list/get; success + apiError for create/update/del
 
 **Phase 5 target tool count:** 56 + 15 = **71 tools** (65 always-on + 6 destructive opt-in).
 Running total after PR #17: **62 tools** (57 always-on + 5 destructive opt-in). ✅
-Running total after PR #18: **66 tools** (61 always-on + 5 destructive opt-in).
+Running total after PR #18: **66 tools** (61 always-on + 5 destructive opt-in). ✅
 Running total after PR #19: **71 tools** (65 always-on + 6 destructive opt-in).
 
 ---

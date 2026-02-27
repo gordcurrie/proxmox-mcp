@@ -93,6 +93,10 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 | `get_vm_firewall_options` | Get firewall policy options for a QEMU VM | `node`, `vmid` |
 | `list_container_firewall_rules` | List all firewall rules for an LXC container | `node`, `vmid` |
 | `get_container_firewall_options` | Get firewall policy options for an LXC container | `node`, `vmid` |
+| `add_vm_firewall_rule` | Add a firewall rule to a QEMU VM | `node`, `vmid`, `type` (`in`\|`out`), `action` (`ACCEPT`\|`DROP`\|`REJECT`), `proto` (optional), `dport` (optional), `sport` (optional), `source` (optional), `dest` (optional), `iface` (optional), `comment` (optional), `enable` (optional) |
+| `delete_vm_firewall_rule` | Delete a firewall rule from a QEMU VM by position | `node`, `vmid`, `pos` (zero-based) |
+| `add_container_firewall_rule` | Add a firewall rule to an LXC container | `node`, `vmid`, `type`, `action`, `proto` (optional), `dport` (optional), `sport` (optional), `source` (optional), `dest` (optional), `iface` (optional), `comment` (optional), `enable` (optional) |
+| `delete_container_firewall_rule` | Delete a firewall rule from an LXC container by position | `node`, `vmid`, `pos` (zero-based) |
 
 ### Storage Content
 
