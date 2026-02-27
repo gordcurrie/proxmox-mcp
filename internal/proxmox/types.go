@@ -279,6 +279,22 @@ type StorageContent struct {
 	Protected int    `json:"protected,omitempty"` // 1 if protected from deletion
 }
 
+// NodeCommandRequest is the request body for POST /nodes/{node}/status.
+// Command must be one of "reboot" or "shutdown".
+type NodeCommandRequest struct {
+	Command string `json:"command"` // "reboot" or "shutdown"
+}
+
+// MoveVMDiskRequest is the request body for
+// POST /nodes/{node}/qemu/{vmid}/move_disk.
+// The disk is moved to a different storage pool. If DeleteSource is true the
+// source volume is removed after a successful move.
+type MoveVMDiskRequest struct {
+	Disk         string `json:"disk"`             // e.g. "scsi0"
+	Storage      string `json:"storage"`          // destination storage pool
+	DeleteSource *int   `json:"delete,omitempty"` // nil = omit; 1 = delete source after move
+}
+
 // APIError represents an HTTP-level error returned by the Proxmox API.
 type APIError struct {
 	StatusCode int

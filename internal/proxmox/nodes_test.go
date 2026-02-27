@@ -2,7 +2,9 @@ package proxmox
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -251,5 +253,55 @@ func TestGetNodeDisks_notFound(t *testing.T) {
 	_, err := newTestClient(t, srv.URL).GetNodeDisks(context.Background(), "missing")
 	if !errors.Is(err, ErrNotFound) {
 		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestNodeCommand_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "want POST", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Path != "/nodes/pve1/status" {
+			http.NotFound(w, r)
+			return
+		}
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "read body", http.StatusInternalServerError)
+			return
+		}
+		var payload map[string]any
+		if err := json.Unmarshal(body, &payload); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		if payload["command"] != "reboot" {
+			http.Error(w, "wrong command", http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, nil))
+	}))
+	defer srv.Close()
+
+	if err := newTestClient(t, srv.URL).NodeCommand(context.Background(), "pve1", "reboot"); err != nil {
+		t.Fatalf("NodeCommand: %v", err)
+	}
+}
+
+func TestNodeCommand_apiError(t *testing.T) {
+	t.Parallel()
+	srv := vmErrorServer(t)
+	defer srv.Close()
+	err := newTestClient(t, srv.URL).NodeCommand(context.Background(), "pve1", "reboot")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }

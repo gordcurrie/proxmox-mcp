@@ -32,3 +32,12 @@ func taskResult(upid string) (*mcp.CallToolResult, any, error) {
 		},
 	}, nil, nil
 }
+
+// textResult returns a plain text MCP tool result.
+func textResult(msg string) (*mcp.CallToolResult, any, error) {
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: msg},
+		},
+	}, nil, nil
+}

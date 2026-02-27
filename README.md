@@ -39,6 +39,7 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 | `resize_vm_disk` | Resize a VM disk (returns task UPID) | `node`, `vmid`, `disk` (e.g. `scsi0`), `size` (e.g. `+10G` or `50G`) |
 | `migrate_vm` | Migrate a VM to another node (returns task UPID) | `node`, `vmid`, `target`, `online` (optional, live migrate) |
 | `restore_vm` | Restore a VM from a vzdump backup archive (returns task UPID) | `node`, `vmid`, `archive` (volid), `storage` (optional), `start` (optional) |
+| `move_vm_disk` | Move a VM disk to a different storage pool (returns task UPID) | `node`, `vmid`, `disk` (e.g. `scsi0`), `storage` (target pool), `delete_source` (optional) |
 
 ### LXC Containers
 
@@ -98,6 +99,8 @@ These tools are **not registered by default**. Set `PROXMOX_ALLOW_DESTRUCTIVE=tr
 | `delete_vm` | Permanently delete a stopped QEMU VM (returns task UPID) | `node`, `vmid`, `confirmed` (must be `true`), `purge` (optional) |
 | `delete_container` | Permanently delete a stopped LXC container (returns task UPID) | `node`, `vmid`, `confirmed` (must be `true`), `purge` (optional) |
 | `delete_storage_content` | Permanently delete a volume from a storage pool (returns task UPID) | `node`, `storage`, `volume` (full volid), `confirmed` (must be `true`) |
+| `reboot_node` | Reboot an entire Proxmox node | `node`, `confirmed` (must be `true`) |
+| `shutdown_node` | Shut down an entire Proxmox node | `node`, `confirmed` (must be `true`) |
 
 Lifecycle and snapshot operations are non-blocking — they return the UPID of the async task immediately. Use `get_task_status` to poll for completion.
 
@@ -126,7 +129,7 @@ All configuration is via environment variables:
 | `PROXMOX_TOKEN_ID` | yes | e.g. `root@pam!mcp` |
 | `PROXMOX_TOKEN_SECRET` | yes | Token UUID secret |
 | `PROXMOX_INSECURE` | no | `true` to skip TLS verification (self-signed certs) |
-| `PROXMOX_ALLOW_DESTRUCTIVE` | no | `true` to register `delete_vm`, `delete_container`, and `delete_storage_content` tools (default: disabled) |
+| `PROXMOX_ALLOW_DESTRUCTIVE` | no | `true` to register `delete_vm`, `delete_container`, `delete_storage_content`, `reboot_node`, and `shutdown_node` tools (default: disabled) |
 
 Source your `.env` file before running:
 

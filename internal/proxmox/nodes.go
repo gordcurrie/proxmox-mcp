@@ -61,3 +61,15 @@ func (c *Client) GetNodeDisks(ctx context.Context, node string) ([]map[string]an
 	}
 	return disks, nil
 }
+
+// NodeCommand sends a power management command to a node.
+// command must be "reboot" or "shutdown". The operation is irreversible and
+// takes down the entire node, so callers must validate before invoking this.
+func (c *Client) NodeCommand(ctx context.Context, node, command string) error {
+	req := &NodeCommandRequest{Command: command}
+	var result any
+	if err := c.postWithBody(ctx, "/nodes/"+url.PathEscape(node)+"/status", req, &result); err != nil {
+		return fmt.Errorf("sending command %q to node %s: %w", command, node, err)
+	}
+	return nil
+}
