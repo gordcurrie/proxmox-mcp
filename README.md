@@ -83,6 +83,17 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 | `list_node_network` | List network interfaces on a node | `node`, `type` (optional: `bridge`, `bond`, `eth`, `alias`, `vlan`, `OVSBridge`, `OVSBond`, `OVSPort`, `OVSIntPort`, `any_bridge`) |
 | `get_node_network_interface` | Get configuration of a specific network interface | `node`, `iface` (e.g. `vmbr0`) |
 
+### Firewall
+
+| Tool | Description | Parameters |
+|---|---|---|
+| `list_cluster_firewall_rules` | List all firewall rules at the datacenter level | — |
+| `get_cluster_firewall_options` | Get datacenter firewall policy options (default in/out policies, logging) | — |
+| `list_vm_firewall_rules` | List all firewall rules for a QEMU VM | `node`, `vmid` |
+| `get_vm_firewall_options` | Get firewall policy options for a QEMU VM | `node`, `vmid` |
+| `list_container_firewall_rules` | List all firewall rules for an LXC container | `node`, `vmid` |
+| `get_container_firewall_options` | Get firewall policy options for an LXC container | `node`, `vmid` |
+
 ### Storage Content
 
 | Tool | Description | Parameters |
