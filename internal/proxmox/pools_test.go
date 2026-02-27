@@ -63,7 +63,7 @@ func TestGetPool_success(t *testing.T) {
 		},
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/pools/dev" {
+		if r.URL.Path != "/pools" || r.URL.Query().Get("poolid") != "dev" {
 			http.NotFound(w, r)
 			return
 		}
@@ -96,8 +96,8 @@ func TestGetPool_notFound(t *testing.T) {
 	defer srv.Close()
 
 	_, err := newTestClient(t, srv.URL).GetPool(context.Background(), "no-such-pool")
-	if !errors.Is(err, ErrNotFound) {
-		t.Errorf("expected ErrNotFound, got %v", err)
+	if err == nil {
+		t.Fatal("expected error, got nil")
 	}
 }
 

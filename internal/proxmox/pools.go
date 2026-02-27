@@ -19,9 +19,11 @@ func (c *Client) ListPools(ctx context.Context) ([]Pool, error) {
 
 // GetPool returns the full details of a single resource pool including its
 // member VMs, containers, and storage.
+// Uses GET /pools?poolid={poolid} (the non-deprecated form that supports nested pools)
+// rather than the deprecated GET /pools/{poolid}.
 func (c *Client) GetPool(ctx context.Context, poolid string) (*Pool, error) {
 	var pool Pool
-	if err := c.get(ctx, "/pools/"+url.PathEscape(poolid), &pool); err != nil {
+	if err := c.get(ctx, "/pools?poolid="+url.QueryEscape(poolid), &pool); err != nil {
 		return nil, fmt.Errorf("getting pool %q: %w", poolid, err)
 	}
 
