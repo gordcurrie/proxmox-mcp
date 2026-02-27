@@ -312,6 +312,39 @@ type FirewallRuleRequest struct {
 	Comment string `json:"comment,omitempty"` // human-readable description
 }
 
+// Pool represents a Proxmox resource pool.
+// When returned by ListPools only PoolID and Comment are populated.
+// GetPool also populates Members.
+type Pool struct {
+	PoolID  string       `json:"poolid"`
+	Comment string       `json:"comment,omitempty"`
+	Members []PoolMember `json:"members,omitempty"`
+}
+
+// PoolMember is a single member of a resource pool (a VM, container, or storage).
+type PoolMember struct {
+	ID      string `json:"id"`
+	Type    string `json:"type"`              // "qemu", "lxc", or "storage"
+	VMID    int    `json:"vmid,omitempty"`    // set for qemu/lxc members
+	Node    string `json:"node,omitempty"`    // node the resource lives on
+	Storage string `json:"storage,omitempty"` // set for storage members
+}
+
+// CreatePoolRequest is the request body for POST /cluster/pools.
+type CreatePoolRequest struct {
+	PoolID  string `json:"poolid"`
+	Comment string `json:"comment,omitempty"`
+}
+
+// UpdatePoolRequest is the request body for PUT /cluster/pools/{poolid}.
+// VMs and Storage are comma-separated lists of IDs to add (or remove when Delete is set).
+type UpdatePoolRequest struct {
+	Comment string `json:"comment,omitempty"`
+	VMs     string `json:"vms,omitempty"`     // comma-separated numeric VM/CT IDs
+	Storage string `json:"storage,omitempty"` // comma-separated storage names
+	Delete  *int   `json:"delete,omitempty"`  // 1 = remove the listed members instead of adding them
+}
+
 // APIError represents an HTTP-level error returned by the Proxmox API.
 type APIError struct {
 	StatusCode int

@@ -119,4 +119,24 @@ func registerDestructiveTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		return textResult("Shutdown command sent to node " + input.Node)
 	})
+
+	type deletePoolInput struct {
+		PoolID    string `json:"poolid"    jsonschema:"ID of the pool to delete"`
+		Confirmed bool   `json:"confirmed" jsonschema:"must be set to true to confirm deletion"`
+	}
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "delete_pool",
+		Description: "Permanently delete a resource pool from the cluster. The pool must be empty first. Set confirmed=true to proceed.",
+		Annotations: &mcp.ToolAnnotations{
+			DestructiveHint: &destructiveHint,
+		},
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input deletePoolInput) (*mcp.CallToolResult, any, error) {
+		if !input.Confirmed {
+			return nil, nil, errors.New("delete_pool: confirmed must be true to proceed with deletion")
+		}
+		if err := client.DeletePool(ctx, input.PoolID); err != nil {
+			return nil, nil, fmt.Errorf("delete_pool: %w", err)
+		}
+		return textResult("pool deleted: " + input.PoolID)
+	})
 }
