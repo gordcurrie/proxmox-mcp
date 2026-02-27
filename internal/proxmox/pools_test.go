@@ -54,14 +54,14 @@ func TestListPools_notFound(t *testing.T) {
 func TestGetPool_success(t *testing.T) {
 	t.Parallel()
 
-	want := Pool{
+	want := []Pool{{
 		PoolID:  "dev",
 		Comment: "Development pool",
 		Members: []PoolMember{
 			{ID: "qemu/100", Type: "qemu", VMID: 100, Node: "pve1"},
 			{ID: "storage/pve1/local", Type: "storage", Node: "pve1", Storage: "local"},
 		},
-	}
+	}}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/pools" || r.URL.Query().Get("poolid") != "dev" {
 			http.NotFound(w, r)
@@ -90,14 +90,16 @@ func TestGetPool_success(t *testing.T) {
 func TestGetPool_notFound(t *testing.T) {
 	t.Parallel()
 
+	// Server returns an empty array — GetPool should surface ErrNotFound.
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.NotFound(w, r)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, []Pool{}))
 	}))
 	defer srv.Close()
 
 	_, err := newTestClient(t, srv.URL).GetPool(context.Background(), "no-such-pool")
-	if err == nil {
-		t.Fatal("expected error, got nil")
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }
 
