@@ -37,6 +37,38 @@ func TestListNodeNetwork_success(t *testing.T) {
 	}
 }
 
+func TestListNodeNetwork_withTypeFilter(t *testing.T) {
+	t.Parallel()
+
+	want := []map[string]any{
+		{"iface": "vmbr0", "type": "bridge", "active": float64(1)},
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/nodes/pve1/network" {
+			http.NotFound(w, r)
+			return
+		}
+		if r.URL.Query().Get("type") != "bridge" {
+			http.Error(w, "want type=bridge query param", http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, want))
+	}))
+	defer srv.Close()
+
+	got, err := newTestClient(t, srv.URL).ListNodeNetwork(context.Background(), "pve1", "bridge")
+	if err != nil {
+		t.Fatalf("ListNodeNetwork with type filter: %v", err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("got %d interfaces, want 1", len(got))
+	}
+	if got[0]["iface"] != "vmbr0" {
+		t.Errorf("iface: got %v, want vmbr0", got[0]["iface"])
+	}
+}
+
 func TestListNodeNetwork_notFound(t *testing.T) {
 	t.Parallel()
 
