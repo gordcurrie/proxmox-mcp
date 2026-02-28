@@ -55,6 +55,12 @@ git add . && git commit -F /tmp/msg.txt
 
 Never pass multi-line messages with `-m` — the shell mangles them.
 
+## Git Push Rules
+
+- Use plain `git push` for normal commits (new commits on top of the branch).
+- Use `git push --force-with-lease` **only** when history has been rewritten (rebase, amend, etc.).
+- **Never** use `git push --force` under any circumstances without explicit user permission.
+
 ## Quality Gates — `make check` must pass before every commit
 
 ```

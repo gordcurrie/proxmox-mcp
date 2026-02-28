@@ -98,6 +98,15 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 | `add_container_firewall_rule` | Add a firewall rule to an LXC container | `node`, `vmid`, `type`, `action`, `proto` (optional), `dport` (optional), `sport` (optional), `source` (optional), `dest` (optional), `iface` (optional), `comment` (optional), `enable` (optional) |
 | `delete_container_firewall_rule` | Delete a firewall rule from an LXC container by position | `node`, `vmid`, `pos` (zero-based) |
 
+### Pool Management
+
+| Tool | Description | Parameters |
+|---|---|---|
+| `list_pools` | List all resource pools in the cluster | — |
+| `get_pool` | Get full details of a pool including its member VMs, containers, and storage | `poolid` |
+| `create_pool` | Create a new resource pool | `poolid`, `comment` (optional) |
+| `update_pool` | Update a pool: change comment or add/remove member VMs and storage | `poolid`, `comment` (optional), `vms` (optional, comma-separated VM/CT IDs), `storage` (optional, comma-separated storage names), `delete` (optional, set `true` to remove listed members instead of adding) |
+
 ### Storage Content
 
 | Tool | Description | Parameters |
@@ -116,6 +125,7 @@ These tools are **not registered by default**. Set `PROXMOX_ALLOW_DESTRUCTIVE=tr
 | `delete_storage_content` | Permanently delete a volume from a storage pool (returns task UPID) | `node`, `storage`, `volume` (full volid), `confirmed` (must be `true`) |
 | `reboot_node` | Reboot an entire Proxmox node | `node`, `confirmed` (must be `true`) |
 | `shutdown_node` | Shut down an entire Proxmox node | `node`, `confirmed` (must be `true`) |
+| `delete_pool` | Permanently delete an empty resource pool | `poolid`, `confirmed` (must be `true`) |
 
 Lifecycle and snapshot operations are non-blocking — they return the UPID of the async task immediately. Use `get_task_status` to poll for completion.
 
@@ -144,7 +154,7 @@ All configuration is via environment variables:
 | `PROXMOX_TOKEN_ID` | yes | e.g. `root@pam!mcp` |
 | `PROXMOX_TOKEN_SECRET` | yes | Token UUID secret |
 | `PROXMOX_INSECURE` | no | `true` to skip TLS verification (self-signed certs) |
-| `PROXMOX_ALLOW_DESTRUCTIVE` | no | `true` to register `delete_vm`, `delete_container`, `delete_storage_content`, `reboot_node`, and `shutdown_node` tools (default: disabled) |
+| `PROXMOX_ALLOW_DESTRUCTIVE` | no | `true` to register `delete_vm`, `delete_container`, `delete_storage_content`, `reboot_node`, `shutdown_node`, and `delete_pool` tools (default: disabled) |
 
 Source your `.env` file before running:
 
