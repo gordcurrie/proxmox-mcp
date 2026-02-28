@@ -36,6 +36,9 @@ func (c *Client) GetPool(ctx context.Context, poolid string) (*Pool, error) {
 
 // CreatePool creates a new resource pool with the given ID and optional comment.
 func (c *Client) CreatePool(ctx context.Context, req *CreatePoolRequest) error {
+	if req == nil {
+		return fmt.Errorf("creating pool: request is nil")
+	}
 	if err := c.postWithBody(ctx, "/pools", req, nil); err != nil {
 		return fmt.Errorf("creating pool %q: %w", req.PoolID, err)
 	}
@@ -46,6 +49,9 @@ func (c *Client) CreatePool(ctx context.Context, req *CreatePoolRequest) error {
 // UpdatePool updates the configuration of a resource pool.
 // Set req.Delete to 1 to remove the listed VMs/storage instead of adding them.
 func (c *Client) UpdatePool(ctx context.Context, poolid string, req *UpdatePoolRequest) error {
+	if req == nil {
+		return fmt.Errorf("updating pool %q: request is nil", poolid)
+	}
 	if err := c.put(ctx, "/pools/"+url.PathEscape(poolid), req, nil); err != nil {
 		return fmt.Errorf("updating pool %q: %w", poolid, err)
 	}

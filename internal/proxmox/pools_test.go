@@ -126,6 +126,15 @@ func TestCreatePool_success(t *testing.T) {
 	}
 }
 
+func TestCreatePool_nilRequest(t *testing.T) {
+	t.Parallel()
+
+	err := newTestClient(t, "http://unused").CreatePool(context.Background(), nil)
+	if err == nil {
+		t.Fatal("expected error for nil request, got nil")
+	}
+}
+
 func TestCreatePool_apiError(t *testing.T) {
 	t.Parallel()
 
@@ -161,6 +170,15 @@ func TestUpdatePool_success(t *testing.T) {
 	req := &UpdatePoolRequest{Comment: "Updated comment", VMs: "100,101"}
 	if err := newTestClient(t, srv.URL).UpdatePool(context.Background(), "dev", req); err != nil {
 		t.Fatalf("UpdatePool: %v", err)
+	}
+}
+
+func TestUpdatePool_nilRequest(t *testing.T) {
+	t.Parallel()
+
+	err := newTestClient(t, "http://unused").UpdatePool(context.Background(), "dev", nil)
+	if err == nil {
+		t.Fatal("expected error for nil request, got nil")
 	}
 }
 

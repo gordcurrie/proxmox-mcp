@@ -15,6 +15,9 @@ func registerPoolTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "list_pools",
 		Description: "List all resource pools defined in the cluster.",
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint: true,
+		},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ listPoolsInput) (*mcp.CallToolResult, any, error) {
 		pools, err := client.ListPools(ctx)
 		if err != nil {
@@ -31,6 +34,7 @@ func registerPoolTools(s *mcp.Server, client *proxmox.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_pool",
 		Description: "Get the full details of a resource pool including its member VMs, containers, and storage.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input getPoolInput) (*mcp.CallToolResult, any, error) {
 		pool, err := client.GetPool(ctx, input.PoolID)
 		if err != nil {
