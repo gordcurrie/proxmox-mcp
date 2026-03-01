@@ -129,18 +129,38 @@ These tools are **not registered by default**. Set `PROXMOX_ALLOW_DESTRUCTIVE=tr
 
 Lifecycle and snapshot operations are non-blocking — they return the UPID of the async task immediately. Use `get_task_status` to poll for completion.
 
-## Prerequisites
+## Installation
 
-- Go 1.26+
-- A Proxmox VE cluster with API token access
-- An API token created in **Datacenter → Permissions → API Tokens**
+### Download a pre-built binary
 
-## Setup
+Download the latest release for your platform from the [Releases](https://github.com/gordcurrie/proxmox-mcp/releases) page.
+
+| Platform | Binary |
+|---|---|
+| Linux (amd64) | `proxmox-mcp_linux_amd64` |
+| Linux (arm64) | `proxmox-mcp_linux_arm64` |
+| macOS (amd64) | `proxmox-mcp_darwin_amd64` |
+| macOS (arm64) | `proxmox-mcp_darwin_arm64` |
+| Windows (amd64) | `proxmox-mcp_windows_amd64.exe` |
+
+Make it executable and place it on your `PATH` (substitute the filename for your platform):
+
+```bash
+chmod +x <binary-name>
+mv <binary-name> /usr/local/bin/proxmox-mcp
+```
+
+> Windows users: rename the `.exe` and add it to a directory on your `%PATH%`.
+
+### Build from source
+
+Requires Go 1.26+. You will also need a Proxmox VE API token — create one in **Datacenter → Permissions → API Tokens**.
 
 ```bash
 git clone https://github.com/gordcurrie/proxmox-mcp
 cd proxmox-mcp
-cp .env.example .env   # then edit .env with your credentials
+cp .env.example .env   # copy the example env file
+$EDITOR .env           # set PROXMOX_* values (see table below)
 make build             # binary lands in bin/proxmox-mcp
 ```
 
@@ -246,7 +266,7 @@ Add the server to `opencode.json` in your project root (or `~/.config/opencode/o
 ```bash
 make install-tools   # install golangci-lint, gosec, govulncheck, gofumpt
 make check           # full quality gate: fix, fmt, vet, lint, sec, vulncheck, test, build
-make test            # tests only
+make test            # tests only (with race detector)
 make build           # build only → bin/proxmox-mcp
-make clean           # remove bin/
+make clean           # remove bin/proxmox-mcp
 ```
