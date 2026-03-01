@@ -418,6 +418,35 @@ Running total after PR #19: **71 tools** (65 always-on + 6 destructive opt-in). 
 
 ---
 
+## Phase 6 — CI & Releases
+
+Prerequisite: all feature phases merged and repo made public. To be implemented
+alongside `truenas-mcp` Phase 8.
+
+### GitHub Actions Workflows
+
+**`.github/workflows/ci.yml`** — runs on every push and PR to `main`:
+- `make check` (fix, fmt, vet, lint, sec, vulncheck, test -race, build)
+
+**`.github/workflows/release.yml`** — runs on `v*` tag push:
+- Cross-compile for: `linux/amd64`, `linux/arm64`, `darwin/amd64`, `darwin/arm64`, `windows/amd64`
+- Upload binaries to GitHub Release
+- Binary naming convention: `proxmox-mcp_<os>_<arch>[.exe]`
+
+### README Updates
+
+- Add **Installation** section: download binary from Releases page
+- Add **VS Code `mcp.json`** usage snippet with env var instructions
+- Add **Building from source** section for Go users
+
+### Definition of Done
+
+- [x] `ci.yml` passes on `main`
+- [x] `release.yml` produces binaries on a `v*` tag
+- [ ] README installation section complete
+
+---
+
 ## Proxmox API Notes
 
 - Base URL: `https://<host>:8006/api2/json`
