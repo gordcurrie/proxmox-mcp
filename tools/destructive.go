@@ -61,6 +61,26 @@ func registerDestructiveTools(s *mcp.Server, client *proxmox.Client) {
 		return taskResult(upid)
 	})
 
+	type removeStorageInput struct {
+		Storage   string `json:"storage"   jsonschema:"name of the storage definition to remove (e.g. pbs-store)"`
+		Confirmed bool   `json:"confirmed" jsonschema:"must be set to true to confirm removal"`
+	}
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "remove_storage",
+		Description: "Remove a storage definition from the Proxmox cluster. This only removes the Proxmox entry — it does not affect the underlying server or data. Set confirmed=true to proceed.",
+		Annotations: &mcp.ToolAnnotations{
+			DestructiveHint: &destructiveHint,
+		},
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input removeStorageInput) (*mcp.CallToolResult, any, error) {
+		if !input.Confirmed {
+			return nil, nil, errors.New("remove_storage: confirmed must be true to proceed with removal")
+		}
+		if err := client.RemoveStorage(ctx, input.Storage); err != nil {
+			return nil, nil, fmt.Errorf("remove_storage: %w", err)
+		}
+		return jsonResult(map[string]string{"storage": input.Storage, "status": "removed"})
+	})
+
 	type deleteStorageContentInput struct {
 		Node      string `json:"node"      jsonschema:"node the storage pool is on"`
 		Storage   string `json:"storage"   jsonschema:"name of the storage pool (e.g. local)"`

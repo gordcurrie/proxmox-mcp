@@ -1,0 +1,248 @@
+package proxmox
+
+import (
+	"context"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
+
+func TestListStorages_success(t *testing.T) {
+	t.Parallel()
+
+	want := []map[string]any{
+		{"storage": "local", "type": "dir", "content": "iso,vztmpl,backup"},
+		{"storage": "nfs-backups", "type": "nfs", "server": "truenas.local"},
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/storage" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, want))
+	}))
+	defer srv.Close()
+
+	got, err := newTestClient(t, srv.URL).ListStorages(context.Background(), "")
+	if err != nil {
+		t.Fatalf("ListStorages: %v", err)
+	}
+	if len(got) != len(want) {
+		t.Fatalf("got %d storages, want %d", len(got), len(want))
+	}
+	if got[0]["storage"] != "local" {
+		t.Errorf("storage[0]: got %v, want local", got[0]["storage"])
+	}
+}
+
+func TestListStorages_withTypeFilter(t *testing.T) {
+	t.Parallel()
+
+	want := []map[string]any{
+		{"storage": "nfs-backups", "type": "nfs", "server": "truenas.local"},
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/storage" {
+			http.NotFound(w, r)
+			return
+		}
+		if r.URL.Query().Get("type") != "nfs" {
+			http.Error(w, "want type=nfs query param", http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, want))
+	}))
+	defer srv.Close()
+
+	got, err := newTestClient(t, srv.URL).ListStorages(context.Background(), "nfs")
+	if err != nil {
+		t.Fatalf("ListStorages with type filter: %v", err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("got %d storages, want 1", len(got))
+	}
+	if got[0]["type"] != "nfs" {
+		t.Errorf("type: got %v, want nfs", got[0]["type"])
+	}
+}
+
+func TestListStorages_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient(t, srv.URL).ListStorages(context.Background(), "")
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestGetStorage_success(t *testing.T) {
+	t.Parallel()
+
+	want := map[string]any{
+		"storage":   "pbs-store",
+		"type":      "pbs",
+		"server":    "truenas.local",
+		"datastore": "pbs-ds",
+		"username":  "backup@pbs",
+		"content":   "backup",
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/storage/pbs-store" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, want))
+	}))
+	defer srv.Close()
+
+	got, err := newTestClient(t, srv.URL).GetStorage(context.Background(), "pbs-store")
+	if err != nil {
+		t.Fatalf("GetStorage: %v", err)
+	}
+	if got["storage"] != "pbs-store" {
+		t.Errorf("storage: got %v, want pbs-store", got["storage"])
+	}
+	if got["type"] != "pbs" {
+		t.Errorf("type: got %v, want pbs", got["type"])
+	}
+}
+
+func TestGetStorage_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient(t, srv.URL).GetStorage(context.Background(), "missing")
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestAddStorage_success(t *testing.T) {
+	t.Parallel()
+
+	req := &AddStorageRequest{
+		Storage:   "pbs-store",
+		Type:      "pbs",
+		Server:    "truenas.local",
+		Datastore: "pbs-ds",
+		Username:  "backup@pbs",
+		Content:   "backup",
+	}
+	want := map[string]any{
+		"storage":   "pbs-store",
+		"type":      "pbs",
+		"server":    "truenas.local",
+		"datastore": "pbs-ds",
+		"username":  "backup@pbs",
+		"content":   "backup",
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/storage" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, want))
+	}))
+	defer srv.Close()
+
+	got, err := newTestClient(t, srv.URL).AddStorage(context.Background(), req)
+	if err != nil {
+		t.Fatalf("AddStorage: %v", err)
+	}
+	if got["storage"] != "pbs-store" {
+		t.Errorf("storage: got %v, want pbs-store", got["storage"])
+	}
+}
+
+func TestAddStorage_apiError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "storage already exists", http.StatusBadRequest)
+	}))
+	defer srv.Close()
+
+	req := &AddStorageRequest{Storage: "dupe", Type: "dir", Path: "/mnt/dupe"}
+	_, err := newTestClient(t, srv.URL).AddStorage(context.Background(), req)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestUpdateStorage_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut || r.URL.Path != "/storage/pbs-store" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, nil))
+	}))
+	defer srv.Close()
+
+	req := &UpdateStorageRequest{Content: "backup,iso"}
+	if err := newTestClient(t, srv.URL).UpdateStorage(context.Background(), "pbs-store", req); err != nil {
+		t.Fatalf("UpdateStorage: %v", err)
+	}
+}
+
+func TestUpdateStorage_apiError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "invalid content type", http.StatusBadRequest)
+	}))
+	defer srv.Close()
+
+	req := &UpdateStorageRequest{Content: "invalid"}
+	if err := newTestClient(t, srv.URL).UpdateStorage(context.Background(), "pbs-store", req); err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestRemoveStorage_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete || r.URL.Path != "/storage/pbs-store" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, nil))
+	}))
+	defer srv.Close()
+
+	if err := newTestClient(t, srv.URL).RemoveStorage(context.Background(), "pbs-store"); err != nil {
+		t.Fatalf("RemoveStorage: %v", err)
+	}
+}
+
+func TestRemoveStorage_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	if err := newTestClient(t, srv.URL).RemoveStorage(context.Background(), "missing"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
