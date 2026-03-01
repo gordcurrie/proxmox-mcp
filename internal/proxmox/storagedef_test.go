@@ -2,7 +2,9 @@ package proxmox
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,7 +15,7 @@ func TestListStorages_success(t *testing.T) {
 
 	want := []map[string]any{
 		{"storage": "local", "type": "dir", "content": "iso,vztmpl,backup"},
-		{"storage": "nfs-backups", "type": "nfs", "server": "truenas.local"},
+		{"storage": "nfs-backups", "type": "nfs", "server": "pbs.storage.invalid"},
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/storage" {
@@ -41,7 +43,7 @@ func TestListStorages_withTypeFilter(t *testing.T) {
 	t.Parallel()
 
 	want := []map[string]any{
-		{"storage": "nfs-backups", "type": "nfs", "server": "truenas.local"},
+		{"storage": "nfs-backups", "type": "nfs", "server": "pbs.storage.invalid"},
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/storage" {
@@ -89,7 +91,7 @@ func TestGetStorage_success(t *testing.T) {
 	want := map[string]any{
 		"storage":   "pbs-store",
 		"type":      "pbs",
-		"server":    "truenas.local",
+		"server":    "pbs.storage.invalid",
 		"datastore": "pbs-ds",
 		"username":  "backup@pbs",
 		"content":   "backup",
@@ -136,7 +138,7 @@ func TestAddStorage_success(t *testing.T) {
 	req := &AddStorageRequest{
 		Storage:   "pbs-store",
 		Type:      "pbs",
-		Server:    "truenas.local",
+		Server:    "pbs.storage.invalid",
 		Datastore: "pbs-ds",
 		Username:  "backup@pbs",
 		Content:   "backup",
@@ -144,14 +146,21 @@ func TestAddStorage_success(t *testing.T) {
 	want := map[string]any{
 		"storage":   "pbs-store",
 		"type":      "pbs",
-		"server":    "truenas.local",
+		"server":    "pbs.storage.invalid",
 		"datastore": "pbs-ds",
 		"username":  "backup@pbs",
 		"content":   "backup",
 	}
+	var gotBody []byte
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost || r.URL.Path != "/storage" {
 			http.NotFound(w, r)
+			return
+		}
+		var err error
+		gotBody, err = io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "read body", http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -165,6 +174,23 @@ func TestAddStorage_success(t *testing.T) {
 	}
 	if got["storage"] != "pbs-store" {
 		t.Errorf("storage: got %v, want pbs-store", got["storage"])
+	}
+
+	// Verify request body contains expected fields.
+	var decoded map[string]any
+	if err := json.Unmarshal(gotBody, &decoded); err != nil {
+		t.Fatalf("unmarshal request body: %v", err)
+	}
+	for _, key := range []string{"storage", "type", "server", "datastore", "username", "content"} {
+		if decoded[key] == nil {
+			t.Errorf("field %q should be present in request body but was absent", key)
+		}
+	}
+	// Omitted fields must not appear in the body.
+	for _, key := range []string{"path", "export", "password", "fingerprint", "nodes"} {
+		if _, present := decoded[key]; present {
+			t.Errorf("field %q should be omitted (omitempty) but was present in request body", key)
+		}
 	}
 }
 
@@ -186,9 +212,16 @@ func TestAddStorage_apiError(t *testing.T) {
 func TestUpdateStorage_success(t *testing.T) {
 	t.Parallel()
 
+	var gotBody []byte
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPut || r.URL.Path != "/storage/pbs-store" {
 			http.NotFound(w, r)
+			return
+		}
+		var err error
+		gotBody, err = io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "read body", http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -196,9 +229,24 @@ func TestUpdateStorage_success(t *testing.T) {
 	}))
 	defer srv.Close()
 
+	// Only set Content — all other fields must be absent (omitempty).
 	req := &UpdateStorageRequest{Content: "backup,iso"}
 	if err := newTestClient(t, srv.URL).UpdateStorage(context.Background(), "pbs-store", req); err != nil {
 		t.Fatalf("UpdateStorage: %v", err)
+	}
+
+	var decoded map[string]any
+	if err := json.Unmarshal(gotBody, &decoded); err != nil {
+		t.Fatalf("unmarshal request body: %v", err)
+	}
+	if decoded["content"] != "backup,iso" {
+		t.Errorf("content: got %v, want backup,iso", decoded["content"])
+	}
+	// Fields not set must not appear in the body.
+	for _, key := range []string{"server", "export", "path", "datastore", "username", "password", "fingerprint", "nodes"} {
+		if _, present := decoded[key]; present {
+			t.Errorf("field %q should be omitted (omitempty) but was present in request body", key)
+		}
 	}
 }
 

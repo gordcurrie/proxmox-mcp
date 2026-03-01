@@ -102,10 +102,10 @@ New `AddStorageRequest` and `UpdateStorageRequest` structs in `types.go`. Fields
 | Tool | API endpoint | Params |
 |---|---|---|
 | `add_storage` | `POST /storage` | `storage` (name), `type` (`nfs`\|`pbs`\|`dir`\|`cifs`\|`zfspool`), `server` (optional), `export` (optional, NFS export path), `path` (optional, dir/local path), `datastore` (optional, PBS datastore name), `username` (optional, PBS/CIFS user), `password` (optional, PBS/CIFS), `content` (optional e.g. `backup,images`), `nodes` (optional, comma-sep to restrict to specific nodes) |
-| `update_storage` | `PUT /storage/{storage}` | `storage`, plus any subset of the add params |
+| `update_storage` | `PUT /storage/{storage}` | `storage` (name, identifier only — type cannot be changed), `server` (optional), `export` (optional), `path` (optional), `datastore` (optional), `username` (optional), `password` (optional), `fingerprint` (optional), `content` (optional), `nodes` (optional), `shared` (optional) |
 | `remove_storage` | `DELETE /storage/{storage}` | `storage`, `confirmed: true` — destructive opt-in |
 
-Tests: success + apiError for add/update; success + notFound for remove (6 new tests).
+Tests: success + apiError for add/update; success + notFound for remove.
 
 **Phase 7 target tool count:** 71 + 5 = **76 tools** (70 always-on + 6 destructive opt-in).
 

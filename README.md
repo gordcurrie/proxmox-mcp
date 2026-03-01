@@ -121,7 +121,7 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 | `list_storages` | List all cluster-wide storage definitions | `type` (optional filter: `nfs`, `pbs`, `dir`, `cifs`, `zfspool`, etc.) |
 | `get_storage` | Get full configuration of a storage definition | `storage` (name) |
 | `add_storage` | Add a new storage target to the cluster | `storage` (name), `type` (required: `nfs`\|`pbs`\|`dir`\|`cifs`\|`zfspool`\|...), `server` (optional), `export` (optional, NFS path), `path` (optional, dir path), `datastore` (optional, PBS datastore), `username` (optional), `password` (optional), `fingerprint` (optional, PBS TLS fingerprint), `content` (optional, e.g. `backup,images`), `nodes` (optional, comma-sep), `shared` (optional bool) |
-| `update_storage` | Update an existing storage definition | `storage` (name), plus any subset of the `add_storage` params |
+| `update_storage` | Update an existing storage definition | `storage` (name), plus any of: `server`, `export`, `path`, `datastore`, `username`, `password`, `fingerprint`, `content`, `nodes`, `shared` |
 
 ### Destructive (opt-in)
 
