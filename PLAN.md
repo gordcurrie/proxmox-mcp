@@ -7,6 +7,22 @@ Uses the official `modelcontextprotocol/go-sdk`, a custom Proxmox HTTP client (n
 Proxmox library), API token auth, and strict linting enforced via `golangci-lint`, `gosec`,
 `govulncheck`, and `go fix`.
 
+## Plan Status
+
+**Phases 1–6 complete.** All planned tools are shipped, CI and release workflows are in
+place, and the README is up to date.
+
+New phases will be added here when the next area of work is planned.
+
+| Phase | Status |
+|---|---|
+| 1 — MCP Tools (v0.1.0) | ✅ Complete |
+| 2 — Full CRUD, Snapshots, Parity (v0.2.0) | ✅ Complete |
+| 3 — Config mutation, migration, storage content, backup (v0.3.0) | ✅ Complete |
+| 4 — Restore, network visibility, node power, disk management (v0.4.0) | ✅ Complete |
+| 5 — Firewall visibility & mutation, pool management (v0.5.0) | ✅ Complete |
+| 6 — CI & Releases | ✅ Complete |
+
 ## Decisions
 
 | Decision | Choice | Rationale |
@@ -443,7 +459,7 @@ alongside `truenas-mcp` Phase 8.
 
 - [x] `ci.yml` passes on `main`
 - [x] `release.yml` produces binaries on a `v*` tag
-- [ ] README installation section complete
+- [x] README installation section complete
 
 ---
 
