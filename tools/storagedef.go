@@ -75,11 +75,10 @@ func registerStorageDefTools(s *mcp.Server, client *proxmox.Client) {
 			one := 1
 			req.Shared = &one
 		}
-		result, err := client.AddStorage(ctx, req)
-		if err != nil {
+		if _, err := client.AddStorage(ctx, req); err != nil {
 			return nil, nil, fmt.Errorf("add_storage: %w", err)
 		}
-		return jsonResult(result)
+		return jsonResult(map[string]string{"storage": input.Storage, "status": "created"})
 	})
 
 	type updateStorageInput struct {
