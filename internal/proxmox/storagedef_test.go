@@ -209,6 +209,15 @@ func TestAddStorage_apiError(t *testing.T) {
 	}
 }
 
+func TestAddStorage_nilRequest(t *testing.T) {
+	t.Parallel()
+
+	_, err := newTestClient(t, "http://unused.invalid").AddStorage(context.Background(), nil)
+	if err == nil {
+		t.Fatal("expected error for nil request, got nil")
+	}
+}
+
 func TestUpdateStorage_success(t *testing.T) {
 	t.Parallel()
 
@@ -261,6 +270,14 @@ func TestUpdateStorage_apiError(t *testing.T) {
 	req := &UpdateStorageRequest{Content: "invalid"}
 	if err := newTestClient(t, srv.URL).UpdateStorage(context.Background(), "pbs-store", req); err == nil {
 		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestUpdateStorage_nilRequest(t *testing.T) {
+	t.Parallel()
+
+	if err := newTestClient(t, "http://unused.invalid").UpdateStorage(context.Background(), "pbs-store", nil); err == nil {
+		t.Fatal("expected error for nil request, got nil")
 	}
 }
 
