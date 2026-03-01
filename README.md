@@ -138,17 +138,19 @@ Download the latest release for your platform from the [Releases](https://github
 | Platform | Binary |
 |---|---|
 | Linux (amd64) | `proxmox-mcp_linux_amd64` |
-| Linux (ARM64) | `proxmox-mcp_linux_arm64` |
-| macOS (Intel) | `proxmox-mcp_darwin_amd64` |
-| macOS (Apple Silicon) | `proxmox-mcp_darwin_arm64` |
-| Windows | `proxmox-mcp_windows_amd64.exe` |
+| Linux (arm64) | `proxmox-mcp_linux_arm64` |
+| macOS (amd64) | `proxmox-mcp_darwin_amd64` |
+| macOS (arm64) | `proxmox-mcp_darwin_arm64` |
+| Windows (amd64) | `proxmox-mcp_windows_amd64.exe` |
 
-Make it executable and place it on your `PATH`:
+Make it executable and place it on your `PATH` (substitute the filename for your platform):
 
 ```bash
-chmod +x proxmox-mcp_linux_amd64
-mv proxmox-mcp_linux_amd64 /usr/local/bin/proxmox-mcp
+chmod +x <binary-name>
+mv <binary-name> /usr/local/bin/proxmox-mcp
 ```
+
+> Windows users: rename the `.exe` and add it to a directory on your `%PATH%`.
 
 ### Build from source
 
@@ -157,7 +159,9 @@ Requires Go 1.26+. You will also need a Proxmox VE API token — create one in *
 ```bash
 git clone https://github.com/gordcurrie/proxmox-mcp
 cd proxmox-mcp
-make build   # binary lands in bin/proxmox-mcp
+cp .env.example .env   # copy the example env file
+$EDITOR .env           # set PROXMOX_* values (see table below)
+make build             # binary lands in bin/proxmox-mcp
 ```
 
 ## Configuration
@@ -264,5 +268,5 @@ make install-tools   # install golangci-lint, gosec, govulncheck, gofumpt
 make check           # full quality gate: fix, fmt, vet, lint, sec, vulncheck, test, build
 make test            # tests only (with race detector)
 make build           # build only → bin/proxmox-mcp
-make clean           # remove bin/
+make clean           # remove bin/proxmox-mcp
 ```
