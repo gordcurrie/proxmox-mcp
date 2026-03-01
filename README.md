@@ -114,6 +114,15 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 | `list_storage_content` | List volumes in a storage pool | `node`, `storage`, `content` (optional: `iso`, `vztmpl`, `backup`, `images`) |
 | `get_storage_content_info` | Detailed info about a specific volume | `node`, `storage`, `volume` (full volid, e.g. `local:iso/debian.iso`) |
 
+### Storage Definitions
+
+| Tool | Description | Parameters |
+|---|---|---|
+| `list_storages` | List all cluster-wide storage definitions | `type` (optional filter: `nfs`, `pbs`, `dir`, `cifs`, `zfspool`, etc.) |
+| `get_storage` | Get full configuration of a storage definition | `storage` (name) |
+| `add_storage` | Add a new storage target to the cluster | `storage` (name), `type` (required: `nfs`\|`pbs`\|`dir`\|`cifs`\|`zfspool`\|...), `server` (optional), `export` (optional, NFS path), `path` (optional, dir path), `datastore` (optional, PBS datastore), `username` (optional), `password` (optional), `fingerprint` (optional, PBS TLS fingerprint), `content` (optional, e.g. `backup,images`), `nodes` (optional, comma-sep), `shared` (optional bool) |
+| `update_storage` | Update an existing storage definition | `storage` (name), plus any of: `server`, `export`, `path`, `datastore`, `username`, `password`, `fingerprint`, `content`, `nodes`, `shared` |
+
 ### Destructive (opt-in)
 
 These tools are **not registered by default**. Set `PROXMOX_ALLOW_DESTRUCTIVE=true` to enable them.
@@ -126,6 +135,7 @@ These tools are **not registered by default**. Set `PROXMOX_ALLOW_DESTRUCTIVE=tr
 | `reboot_node` | Reboot an entire Proxmox node | `node`, `confirmed` (must be `true`) |
 | `shutdown_node` | Shut down an entire Proxmox node | `node`, `confirmed` (must be `true`) |
 | `delete_pool` | Permanently delete an empty resource pool | `poolid`, `confirmed` (must be `true`) |
+| `remove_storage` | Remove a storage definition from the cluster (does not affect underlying data) | `storage` (name), `confirmed` (must be `true`) |
 
 Lifecycle and snapshot operations are non-blocking — they return the UPID of the async task immediately. Use `get_task_status` to poll for completion.
 

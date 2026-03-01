@@ -345,6 +345,39 @@ type UpdatePoolRequest struct {
 	Delete  *int   `json:"delete,omitempty"`  // 1 = remove the listed members instead of adding them
 }
 
+// AddStorageRequest is the request body for POST /storage.
+// Only Storage and Type are required; all other fields are type-specific.
+type AddStorageRequest struct {
+	Storage     string          `json:"storage"`               // storage name (required)
+	Type        string          `json:"type"`                  // storage type, e.g. nfs, pbs, dir (required)
+	Content     string          `json:"content,omitempty"`     // comma-sep content types, e.g. "backup,images"
+	Nodes       string          `json:"nodes,omitempty"`       // restrict to these comma-sep nodes
+	Shared      *int            `json:"shared,omitempty"`      // 1 = accessible from all nodes
+	Server      string          `json:"server,omitempty"`      // NFS/PBS/CIFS server host
+	Export      string          `json:"export,omitempty"`      // NFS export path
+	Path        string          `json:"path,omitempty"`        // dir/local path
+	Datastore   string          `json:"datastore,omitempty"`   // PBS datastore name
+	Username    string          `json:"username,omitempty"`    // PBS/CIFS username
+	Password    SensitiveString `json:"password,omitempty"`    // PBS/CIFS password
+	Fingerprint string          `json:"fingerprint,omitempty"` // PBS server TLS fingerprint
+}
+
+// UpdateStorageRequest is the request body for PUT /storage/{storage}.
+// All fields are optional — only supplied fields are changed.
+// Type and Storage (name) cannot be changed after creation and are omitted here.
+type UpdateStorageRequest struct {
+	Content     string          `json:"content,omitempty"`     // comma-sep content types
+	Nodes       string          `json:"nodes,omitempty"`       // restrict to these comma-sep nodes
+	Shared      *int            `json:"shared,omitempty"`      // 1 = accessible from all nodes
+	Server      string          `json:"server,omitempty"`      // NFS/PBS/CIFS server host
+	Export      string          `json:"export,omitempty"`      // NFS export path
+	Path        string          `json:"path,omitempty"`        // dir/local path
+	Datastore   string          `json:"datastore,omitempty"`   // PBS datastore name
+	Username    string          `json:"username,omitempty"`    // PBS/CIFS username
+	Password    SensitiveString `json:"password,omitempty"`    // PBS/CIFS password
+	Fingerprint string          `json:"fingerprint,omitempty"` // PBS server TLS fingerprint
+}
+
 // APIError represents an HTTP-level error returned by the Proxmox API.
 type APIError struct {
 	StatusCode int
