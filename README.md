@@ -82,8 +82,8 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 |---|---|---|
 | `list_node_network` | List network interfaces on a node | `node`, `type` (optional: `bridge`, `bond`, `eth`, `alias`, `vlan`, `OVSBridge`, `OVSBond`, `OVSPort`, `OVSIntPort`, `any_bridge`) |
 | `get_node_network_interface` | Get configuration of a specific network interface | `node`, `iface` (e.g. `vmbr0`) |
-| `create_node_network_interface` | Create a new network interface on a node (staged until `apply_node_network_changes`) | `node`, `iface`, `type` (`bridge`\|`bond`\|`eth`\|`alias`\|`vlan`), `address` (optional), `netmask` (optional), `gateway` (optional), `address6` (optional), `gateway6` (optional), `mtu` (optional), `autostart` (optional), `bridge_ports` (optional), `bridge_stp` (optional), `bridge_fd` (optional), `bond_mode` (optional), `slaves` (optional), `comments` (optional) |
-| `update_node_network_interface` | Update an existing network interface on a node (staged until `apply_node_network_changes`) | `node`, `iface`, `type` (required), plus any optional fields as in `create_node_network_interface` |
+| `create_node_network_interface` | Create a new network interface on a node (staged until `apply_node_network_changes`) | `node`, `iface`, `type` (`bridge`\|`bond`\|`eth`\|`alias`\|`vlan`\|`OVSBridge`\|`OVSBond`\|`OVSPort`\|`OVSIntPort`), `address` (optional, dotted-decimal or CIDR), `netmask` (optional), `gateway` (optional), `address6` (optional, CIDR), `gateway6` (optional), `mtu` (optional), `autostart` (optional, `1`=boot, `0`=manual), `bridge_ports` (optional), `bridge_stp` (optional), `bridge_fd` (optional), `bond_mode` (optional), `slaves` (optional), `comments` (optional) |
+| `update_node_network_interface` | Update an existing network interface on a node (staged until `apply_node_network_changes`) | `node`, `iface`, `type` (required: same values as `create_node_network_interface`), plus any optional fields as in `create_node_network_interface` |
 | `apply_node_network_changes` | Apply all staged network configuration changes on a node, reloading the network stack | `node` |
 
 ### Firewall

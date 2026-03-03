@@ -45,17 +45,17 @@ func registerNetworkTools(s *mcp.Server, client *proxmox.Client) {
 	type createNodeNetworkInterfaceInput struct {
 		Node        string `json:"node"                    jsonschema:"required,name of the node (e.g. pve)"`
 		Iface       string `json:"iface"                   jsonschema:"required,interface name to create (e.g. vmbr1)"`
-		Type        string `json:"type"                    jsonschema:"required,interface type: bridge, bond, eth, alias, vlan"`
-		Address     string `json:"address,omitempty"       jsonschema:"IPv4 address in dotted-decimal notation"`
+		Type        string `json:"type"                    jsonschema:"required,interface type: bridge, bond, eth, alias, vlan, OVSBridge, OVSBond, OVSPort, OVSIntPort"`
+		Address     string `json:"address,omitempty"       jsonschema:"IPv4 address or CIDR (e.g. 192.168.1.10 or 192.168.1.10/24)"`
 		Netmask     string `json:"netmask,omitempty"       jsonschema:"IPv4 subnet mask"`
-		Gateway     string `json:"gateway,omitempty"       jsonschema:"default IPv4 gateway"`
-		Address6    string `json:"address6,omitempty"      jsonschema:"IPv6 address"`
-		Gateway6    string `json:"gateway6,omitempty"      jsonschema:"default IPv6 gateway"`
+		Gateway     string `json:"gateway,omitempty"       jsonschema:"default IPv4 gateway address"`
+		Address6    string `json:"address6,omitempty"      jsonschema:"IPv6 address or CIDR (e.g. 2001:db8::1 or 2001:db8::1/64)"`
+		Gateway6    string `json:"gateway6,omitempty"      jsonschema:"default IPv6 gateway address"`
 		MTU         int    `json:"mtu,omitempty"           jsonschema:"maximum transmission unit in bytes"`
-		Autostart   int    `json:"autostart,omitempty"     jsonschema:"1 to start on boot, 0 for manual"`
+		Autostart   *int   `json:"autostart,omitempty"     jsonschema:"1 to start on boot, 0 for manual; omit to leave unchanged"`
 		BridgePorts string `json:"bridge_ports,omitempty"  jsonschema:"space-separated list of bridge member ports (bridge type only)"`
 		BridgeSTP   string `json:"bridge_stp,omitempty"    jsonschema:"spanning tree protocol: on or off (bridge type only)"`
-		BridgeFD    int    `json:"bridge_fd,omitempty"     jsonschema:"bridge forward delay in seconds (bridge type only)"`
+		BridgeFD    *int   `json:"bridge_fd,omitempty"     jsonschema:"bridge forward delay in seconds (bridge type only); omit to leave unchanged"`
 		BondMode    string `json:"bond_mode,omitempty"     jsonschema:"bond mode: active-backup, 802.3ad, etc. (bond type only)"`
 		Slaves      string `json:"slaves,omitempty"        jsonschema:"space-separated bond member ports (bond type only)"`
 		Comments    string `json:"comments,omitempty"      jsonschema:"free-text comments; may include post-up/pre-down routing lines for static routes"`
@@ -90,17 +90,17 @@ func registerNetworkTools(s *mcp.Server, client *proxmox.Client) {
 	type updateNodeNetworkInterfaceInput struct {
 		Node        string `json:"node"                    jsonschema:"required,name of the node (e.g. pve)"`
 		Iface       string `json:"iface"                   jsonschema:"required,interface name to update (e.g. vmbr0)"`
-		Type        string `json:"type"                    jsonschema:"required,interface type: bridge, bond, eth, alias, vlan"`
-		Address     string `json:"address,omitempty"       jsonschema:"IPv4 address in dotted-decimal notation"`
+		Type        string `json:"type"                    jsonschema:"required,interface type: bridge, bond, eth, alias, vlan, OVSBridge, OVSBond, OVSPort, OVSIntPort"`
+		Address     string `json:"address,omitempty"       jsonschema:"IPv4 address or CIDR (e.g. 192.168.1.10 or 192.168.1.10/24)"`
 		Netmask     string `json:"netmask,omitempty"       jsonschema:"IPv4 subnet mask"`
-		Gateway     string `json:"gateway,omitempty"       jsonschema:"default IPv4 gateway"`
-		Address6    string `json:"address6,omitempty"      jsonschema:"IPv6 address"`
-		Gateway6    string `json:"gateway6,omitempty"      jsonschema:"default IPv6 gateway"`
+		Gateway     string `json:"gateway,omitempty"       jsonschema:"default IPv4 gateway address"`
+		Address6    string `json:"address6,omitempty"      jsonschema:"IPv6 address or CIDR (e.g. 2001:db8::1 or 2001:db8::1/64)"`
+		Gateway6    string `json:"gateway6,omitempty"      jsonschema:"default IPv6 gateway address"`
 		MTU         int    `json:"mtu,omitempty"           jsonschema:"maximum transmission unit in bytes"`
-		Autostart   int    `json:"autostart,omitempty"     jsonschema:"1 to start on boot, 0 for manual"`
+		Autostart   *int   `json:"autostart,omitempty"     jsonschema:"1 to start on boot, 0 for manual; omit to leave unchanged"`
 		BridgePorts string `json:"bridge_ports,omitempty"  jsonschema:"space-separated list of bridge member ports (bridge type only)"`
 		BridgeSTP   string `json:"bridge_stp,omitempty"    jsonschema:"spanning tree protocol: on or off (bridge type only)"`
-		BridgeFD    int    `json:"bridge_fd,omitempty"     jsonschema:"bridge forward delay in seconds (bridge type only)"`
+		BridgeFD    *int   `json:"bridge_fd,omitempty"     jsonschema:"bridge forward delay in seconds (bridge type only); omit to leave unchanged"`
 		BondMode    string `json:"bond_mode,omitempty"     jsonschema:"bond mode: active-backup, 802.3ad, etc. (bond type only)"`
 		Slaves      string `json:"slaves,omitempty"        jsonschema:"space-separated bond member ports (bond type only)"`
 		Comments    string `json:"comments,omitempty"      jsonschema:"free-text comments; may include post-up/pre-down routing lines for static routes"`

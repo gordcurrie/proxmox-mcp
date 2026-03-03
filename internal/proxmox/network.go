@@ -52,10 +52,10 @@ type NetworkInterfaceConfig struct {
 	Address6    string `json:"address6,omitempty"`     // IPv6 address in CIDR
 	Gateway6    string `json:"gateway6,omitempty"`     // default IPv6 gateway
 	MTU         int    `json:"mtu,omitempty"`          // maximum transmission unit
-	Autostart   int    `json:"autostart,omitempty"`    // 1 = start on boot, 0 = manual
+	Autostart   *int   `json:"autostart,omitempty"`    // 1 = start on boot, 0 = manual; nil = omit
 	BridgePorts string `json:"bridge_ports,omitempty"` // space-separated list of member ports
 	BridgeSTP   string `json:"bridge_stp,omitempty"`   // spanning tree protocol: "on" or "off"
-	BridgeFD    int    `json:"bridge_fd,omitempty"`    // bridge forward delay (seconds)
+	BridgeFD    *int   `json:"bridge_fd,omitempty"`    // bridge forward delay (seconds); nil = omit
 	BondMode    string `json:"bond_mode,omitempty"`    // active-backup, 802.3ad, etc.
 	Slaves      string `json:"slaves,omitempty"`       // space-separated list of bond member ports
 	Comments    string `json:"comments,omitempty"`     // free-text; may include post-up/pre-down lines
@@ -120,6 +120,8 @@ func (c *Client) UpdateNodeNetworkInterface(ctx context.Context, node, iface str
 // ApplyNodeNetworkChanges applies all staged network configuration changes on
 // the specified node, reloading the network stack. This is equivalent to
 // clicking "Apply Configuration" in the Proxmox web UI.
+// Note: put always marshals the body, so the wire request carries {} as the
+// JSON body. Proxmox accepts this form for the apply endpoint.
 func (c *Client) ApplyNodeNetworkChanges(ctx context.Context, node string) error {
 	if node == "" {
 		return fmt.Errorf("applying network changes: node must not be empty")

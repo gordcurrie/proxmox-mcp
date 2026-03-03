@@ -2,7 +2,9 @@ package proxmox
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -133,9 +135,16 @@ func TestCreateNodeNetworkInterface_success(t *testing.T) {
 	t.Parallel()
 
 	want := map[string]any{"iface": "vmbr1", "type": "bridge"}
+	var gotBody []byte
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost || r.URL.Path != "/nodes/pve1/network" {
 			http.NotFound(w, r)
+			return
+		}
+		var err error
+		gotBody, err = io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "read body", http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -152,6 +161,20 @@ func TestCreateNodeNetworkInterface_success(t *testing.T) {
 	}
 	if got["iface"] != "vmbr1" {
 		t.Errorf("iface: got %v, want vmbr1", got["iface"])
+	}
+
+	// Verify the request body encodes iface, type, and bridge_ports.
+	var decoded map[string]any
+	if err := json.Unmarshal(gotBody, &decoded); err != nil {
+		t.Fatalf("unmarshal request body: %v", err)
+	}
+	for _, key := range []string{"iface", "type", "bridge_ports"} {
+		if decoded[key] == nil {
+			t.Errorf("field %q should be present in request body but was absent", key)
+		}
+	}
+	if decoded["iface"] != "vmbr1" {
+		t.Errorf("request body iface: got %v, want vmbr1", decoded["iface"])
 	}
 }
 
@@ -201,9 +224,16 @@ func TestCreateNodeNetworkInterface_validation(t *testing.T) {
 func TestUpdateNodeNetworkInterface_success(t *testing.T) {
 	t.Parallel()
 
+	var gotBody []byte
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPut || r.URL.Path != "/nodes/pve1/network/vmbr0" {
 			http.NotFound(w, r)
+			return
+		}
+		var err error
+		gotBody, err = io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "read body", http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -217,6 +247,21 @@ func TestUpdateNodeNetworkInterface_success(t *testing.T) {
 	)
 	if err != nil {
 		t.Fatalf("UpdateNodeNetworkInterface: %v", err)
+	}
+
+	// Verify the request body encodes type and comments.
+	var decoded map[string]any
+	if err := json.Unmarshal(gotBody, &decoded); err != nil {
+		t.Fatalf("unmarshal request body: %v", err)
+	}
+	for _, key := range []string{"type", "comments"} {
+		if decoded[key] == nil {
+			t.Errorf("field %q should be present in request body but was absent", key)
+		}
+	}
+	// iface must not appear in an update body.
+	if _, present := decoded["iface"]; present {
+		t.Errorf("field \"iface\" should be absent from update request body but was present")
 	}
 }
 
@@ -266,9 +311,16 @@ func TestUpdateNodeNetworkInterface_validation(t *testing.T) {
 func TestApplyNodeNetworkChanges_success(t *testing.T) {
 	t.Parallel()
 
+	var gotBody []byte
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPut || r.URL.Path != "/nodes/pve1/network" {
 			http.NotFound(w, r)
+			return
+		}
+		var err error
+		gotBody, err = io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "read body", http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -278,6 +330,10 @@ func TestApplyNodeNetworkChanges_success(t *testing.T) {
 
 	if err := newTestClient(t, srv.URL).ApplyNodeNetworkChanges(context.Background(), "pve1"); err != nil {
 		t.Fatalf("ApplyNodeNetworkChanges: %v", err)
+	}
+	// put always marshals the body; struct{}{} produces {}.
+	if string(gotBody) != "{}" {
+		t.Errorf("ApplyNodeNetworkChanges request body: got %q, want \"{}\"", string(gotBody))
 	}
 }
 
