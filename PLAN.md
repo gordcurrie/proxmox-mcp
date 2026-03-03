@@ -114,6 +114,44 @@ Running total after PR #21: **76 tools** (70 always-on + 6 destructive).
 
 ---
 
+## Phase 8 — Network Write Operations (target: v0.8.0)
+
+Exposes the Proxmox node network write API so agents can create/update/delete
+interfaces and apply changes — enabling use cases like adding static-route bridge
+interfaces or pre-configuring SDN bridges.
+
+New methods added to `internal/proxmox/network.go`.
+New MCP tools added to `tools/network.go` and `tools/destructive.go`.
+
+### PR #25 — Network interface write (4 new tools)
+
+Closes issue #24.
+
+`create_node_network_interface` and `update_node_network_interface` use
+`postWithBody` / `put` with a `NetworkInterfaceConfig` struct.
+`apply_node_network_changes` uses an empty-body `put` (applies staged changes).
+`delete_node_network_interface` follows the 3-layer safety pattern
+(`PROXMOX_ALLOW_DESTRUCTIVE` + `confirmed: true` + `DestructiveHint`).
+
+Note: all changes to interfaces are staged in `/etc/network/interfaces.new` until
+`apply_node_network_changes` is called.
+
+| Tool | API endpoint | Params |
+|---|---|---|
+| `create_node_network_interface` | `POST /nodes/{node}/network` | `node`, `iface`, `type`, plus optional address/gateway/bridge/bond fields |
+| `update_node_network_interface` | `PUT /nodes/{node}/network/{iface}` | `node`, `iface`, `type`, plus optional address/gateway/bridge/bond fields |
+| `apply_node_network_changes` | `PUT /nodes/{node}/network` | `node` |
+| `delete_node_network_interface` | `DELETE /nodes/{node}/network/{iface}` | `node`, `iface`, `confirmed: true` — destructive opt-in |
+
+Tests: success + notFound for apply/delete; success + notFound + validation for
+create/update.
+
+**Phase 8 target tool count:** 76 + 4 = **80 tools** (73 always-on + 7 destructive).
+
+Running total after PR #25: **80 tools** (73 always-on + 7 destructive).
+
+---
+
 ## Proxmox API Notes
 
 - Base URL: `https://<host>:8006/api2/json`
