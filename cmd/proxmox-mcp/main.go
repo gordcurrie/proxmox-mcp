@@ -96,7 +96,9 @@ func run() error {
 		slog.Info("proxmox-mcp listening", "addr", *addr, "transport", "http")
 		go func() {
 			<-ctx.Done()
-			if shutdownErr := httpServer.Shutdown(context.Background()); shutdownErr != nil {
+			shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			if shutdownErr := httpServer.Shutdown(shutdownCtx); shutdownErr != nil {
 				slog.Warn("HTTP server shutdown error", "err", shutdownErr)
 			}
 		}()
