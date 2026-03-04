@@ -382,3 +382,65 @@ func TestDeleteNodeNetworkInterface_notFound(t *testing.T) {
 		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }
+
+func TestCreateNodeNetworkInterface_apiError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "invalid interface configuration", http.StatusBadRequest)
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient(t, srv.URL).CreateNodeNetworkInterface(
+		context.Background(), "pve1", "vmbr1",
+		&NetworkInterfaceConfig{Type: "bridge"},
+	)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestUpdateNodeNetworkInterface_apiError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "interface is in use", http.StatusBadRequest)
+	}))
+	defer srv.Close()
+
+	err := newTestClient(t, srv.URL).UpdateNodeNetworkInterface(
+		context.Background(), "pve1", "vmbr0",
+		&NetworkInterfaceConfig{Type: "bridge"},
+	)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestApplyNodeNetworkChanges_apiError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "network configuration error", http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	err := newTestClient(t, srv.URL).ApplyNodeNetworkChanges(context.Background(), "pve1")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestDeleteNodeNetworkInterface_apiError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "interface not found", http.StatusBadRequest)
+	}))
+	defer srv.Close()
+
+	err := newTestClient(t, srv.URL).DeleteNodeNetworkInterface(context.Background(), "pve1", "vmbr1")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
