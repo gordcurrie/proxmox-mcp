@@ -20,17 +20,21 @@ func jsonResult(v any) (*mcp.CallToolResult, any, error) {
 	}, nil, nil
 }
 
+type taskResponse struct {
+	TaskID string `json:"task_id"`
+	Status string `json:"status"`
+	Note   string `json:"note"`
+}
+
 // taskResult returns an async task response containing the UPID.
 func taskResult(upid string) (*mcp.CallToolResult, any, error) {
-	msg := fmt.Sprintf(
-		`{"task_id": %q, "status": "dispatched", "note": "Use get_task_status to poll for completion."}`,
-		upid,
-	)
-	return &mcp.CallToolResult{
-		Content: []mcp.Content{
-			&mcp.TextContent{Text: msg},
-		},
-	}, nil, nil
+	resp := taskResponse{
+		TaskID: upid,
+		Status: "dispatched",
+		Note:   "Use get_task_status to poll for completion.",
+	}
+
+	return jsonResult(resp)
 }
 
 // textResult returns a plain text MCP tool result.
