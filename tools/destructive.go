@@ -159,4 +159,29 @@ func registerDestructiveTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		return textResult("pool deleted: " + input.PoolID)
 	})
+
+	type deleteNodeNetworkInterfaceInput struct {
+		Node      string `json:"node"      jsonschema:"required,name of the node (e.g. pve)"`
+		Iface     string `json:"iface"     jsonschema:"required,interface name to delete (e.g. vmbr1)"`
+		Confirmed bool   `json:"confirmed" jsonschema:"must be set to true to confirm deletion"`
+	}
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "delete_node_network_interface",
+		Description: "Remove a network interface from a Proxmox node. Changes are staged until apply_node_network_changes is called. Set confirmed=true to proceed.",
+		Annotations: &mcp.ToolAnnotations{
+			DestructiveHint: &destructiveHint,
+		},
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input deleteNodeNetworkInterfaceInput) (*mcp.CallToolResult, any, error) {
+		if !input.Confirmed {
+			return nil, nil, errors.New("delete_node_network_interface: confirmed must be true to proceed with deletion")
+		}
+		if err := client.DeleteNodeNetworkInterface(ctx, input.Node, input.Iface); err != nil {
+			return nil, nil, fmt.Errorf("delete_node_network_interface: %w", err)
+		}
+		return jsonResult(map[string]string{
+			"node":   input.Node,
+			"iface":  input.Iface,
+			"status": "deleted (staged — call apply_node_network_changes to make permanent)",
+		})
+	})
 }

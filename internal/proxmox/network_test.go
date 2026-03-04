@@ -2,7 +2,9 @@ package proxmox
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -126,5 +128,319 @@ func TestGetNodeNetworkInterface_notFound(t *testing.T) {
 	_, err := newTestClient(t, srv.URL).GetNodeNetworkInterface(context.Background(), "pve1", "missing0")
 	if !errors.Is(err, ErrNotFound) {
 		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestCreateNodeNetworkInterface_success(t *testing.T) {
+	t.Parallel()
+
+	want := map[string]any{"iface": "vmbr1", "type": "bridge"}
+	var gotBody []byte
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/nodes/pve1/network" {
+			http.NotFound(w, r)
+			return
+		}
+		var err error
+		gotBody, err = io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "read body", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, want))
+	}))
+	defer srv.Close()
+
+	got, err := newTestClient(t, srv.URL).CreateNodeNetworkInterface(
+		context.Background(), "pve1", "vmbr1",
+		&NetworkInterfaceConfig{Type: "bridge", BridgePorts: "eth1"},
+	)
+	if err != nil {
+		t.Fatalf("CreateNodeNetworkInterface: %v", err)
+	}
+	if got["iface"] != "vmbr1" {
+		t.Errorf("iface: got %v, want vmbr1", got["iface"])
+	}
+
+	// Verify the request body encodes iface, type, and bridge_ports.
+	var decoded map[string]any
+	if err := json.Unmarshal(gotBody, &decoded); err != nil {
+		t.Fatalf("unmarshal request body: %v", err)
+	}
+	for _, key := range []string{"iface", "type", "bridge_ports"} {
+		if decoded[key] == nil {
+			t.Errorf("field %q should be present in request body but was absent", key)
+		}
+	}
+	if decoded["iface"] != "vmbr1" {
+		t.Errorf("request body iface: got %v, want vmbr1", decoded["iface"])
+	}
+}
+
+func TestCreateNodeNetworkInterface_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient(t, srv.URL).CreateNodeNetworkInterface(
+		context.Background(), "missing", "vmbr1",
+		&NetworkInterfaceConfig{Type: "bridge"},
+	)
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestCreateNodeNetworkInterface_validation(t *testing.T) {
+	t.Parallel()
+
+	c := newTestClient(t, "http://localhost:9")
+	tests := []struct {
+		name  string
+		node  string
+		iface string
+		cfg   *NetworkInterfaceConfig
+	}{
+		{"empty node", "", "vmbr1", &NetworkInterfaceConfig{Type: "bridge"}},
+		{"empty iface", "pve1", "", &NetworkInterfaceConfig{Type: "bridge"}},
+		{"nil cfg", "pve1", "vmbr1", nil},
+		{"empty type", "pve1", "vmbr1", &NetworkInterfaceConfig{}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			_, err := c.CreateNodeNetworkInterface(context.Background(), tt.node, tt.iface, tt.cfg)
+			if err == nil {
+				t.Errorf("expected error for %q, got nil", tt.name)
+			}
+		})
+	}
+}
+
+func TestUpdateNodeNetworkInterface_success(t *testing.T) {
+	t.Parallel()
+
+	var gotBody []byte
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut || r.URL.Path != "/nodes/pve1/network/vmbr0" {
+			http.NotFound(w, r)
+			return
+		}
+		var err error
+		gotBody, err = io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "read body", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, nil))
+	}))
+	defer srv.Close()
+
+	err := newTestClient(t, srv.URL).UpdateNodeNetworkInterface(
+		context.Background(), "pve1", "vmbr0",
+		&NetworkInterfaceConfig{Type: "bridge", Comments: "updated by mcp"},
+	)
+	if err != nil {
+		t.Fatalf("UpdateNodeNetworkInterface: %v", err)
+	}
+
+	// Verify the request body encodes type and comments.
+	var decoded map[string]any
+	if err := json.Unmarshal(gotBody, &decoded); err != nil {
+		t.Fatalf("unmarshal request body: %v", err)
+	}
+	for _, key := range []string{"type", "comments"} {
+		if decoded[key] == nil {
+			t.Errorf("field %q should be present in request body but was absent", key)
+		}
+	}
+	// iface must not appear in an update body.
+	if _, present := decoded["iface"]; present {
+		t.Errorf("field \"iface\" should be absent from update request body but was present")
+	}
+}
+
+func TestUpdateNodeNetworkInterface_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	err := newTestClient(t, srv.URL).UpdateNodeNetworkInterface(
+		context.Background(), "pve1", "missing0",
+		&NetworkInterfaceConfig{Type: "bridge"},
+	)
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestUpdateNodeNetworkInterface_validation(t *testing.T) {
+	t.Parallel()
+
+	c := newTestClient(t, "http://localhost:9")
+	tests := []struct {
+		name  string
+		node  string
+		iface string
+		cfg   *NetworkInterfaceConfig
+	}{
+		{"empty node", "", "vmbr0", &NetworkInterfaceConfig{Type: "bridge"}},
+		{"empty iface", "pve1", "", &NetworkInterfaceConfig{Type: "bridge"}},
+		{"nil cfg", "pve1", "vmbr0", nil},
+		{"empty type", "pve1", "vmbr0", &NetworkInterfaceConfig{}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			err := c.UpdateNodeNetworkInterface(context.Background(), tt.node, tt.iface, tt.cfg)
+			if err == nil {
+				t.Errorf("expected error for %q, got nil", tt.name)
+			}
+		})
+	}
+}
+
+func TestApplyNodeNetworkChanges_success(t *testing.T) {
+	t.Parallel()
+
+	var gotBody []byte
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut || r.URL.Path != "/nodes/pve1/network" {
+			http.NotFound(w, r)
+			return
+		}
+		var err error
+		gotBody, err = io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "read body", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, nil))
+	}))
+	defer srv.Close()
+
+	if err := newTestClient(t, srv.URL).ApplyNodeNetworkChanges(context.Background(), "pve1"); err != nil {
+		t.Fatalf("ApplyNodeNetworkChanges: %v", err)
+	}
+	// put always marshals the body; struct{}{} produces {}.
+	if string(gotBody) != "{}" {
+		t.Errorf("ApplyNodeNetworkChanges request body: got %q, want \"{}\"", string(gotBody))
+	}
+}
+
+func TestApplyNodeNetworkChanges_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	err := newTestClient(t, srv.URL).ApplyNodeNetworkChanges(context.Background(), "missing")
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestDeleteNodeNetworkInterface_success(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete || r.URL.Path != "/nodes/pve1/network/vmbr1" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, nil))
+	}))
+	defer srv.Close()
+
+	if err := newTestClient(t, srv.URL).DeleteNodeNetworkInterface(context.Background(), "pve1", "vmbr1"); err != nil {
+		t.Fatalf("DeleteNodeNetworkInterface: %v", err)
+	}
+}
+
+func TestDeleteNodeNetworkInterface_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	err := newTestClient(t, srv.URL).DeleteNodeNetworkInterface(context.Background(), "pve1", "missing0")
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestCreateNodeNetworkInterface_apiError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "invalid interface configuration", http.StatusBadRequest)
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient(t, srv.URL).CreateNodeNetworkInterface(
+		context.Background(), "pve1", "vmbr1",
+		&NetworkInterfaceConfig{Type: "bridge"},
+	)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestUpdateNodeNetworkInterface_apiError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "interface is in use", http.StatusBadRequest)
+	}))
+	defer srv.Close()
+
+	err := newTestClient(t, srv.URL).UpdateNodeNetworkInterface(
+		context.Background(), "pve1", "vmbr0",
+		&NetworkInterfaceConfig{Type: "bridge"},
+	)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestApplyNodeNetworkChanges_apiError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "network configuration error", http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	err := newTestClient(t, srv.URL).ApplyNodeNetworkChanges(context.Background(), "pve1")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestDeleteNodeNetworkInterface_apiError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "interface not found", http.StatusBadRequest)
+	}))
+	defer srv.Close()
+
+	err := newTestClient(t, srv.URL).DeleteNodeNetworkInterface(context.Background(), "pve1", "vmbr1")
+	if err == nil {
+		t.Fatal("expected error, got nil")
 	}
 }
