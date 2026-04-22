@@ -70,7 +70,7 @@ Each is a distinct, independently reviewable change.
 |---|---|
 | Response body size cap | Add `maxResponseBytes = 10 << 20` (10 MiB) in `internal/proxmox/client.go`. Wrap `resp.Body` in `io.LimitReader(resp.Body, maxResponseBytes)` before `io.ReadAll`. Prevents memory exhaustion on unexpectedly large responses (e.g. full cluster task logs). |
 | HTTP transport hardening | In `cmd/proxmox-mcp/main.go`, add `ReadTimeout: 30s`, `IdleTimeout: 120s`, `MaxHeaderBytes: 1 MiB`, and wrap handler with `http.MaxBytesHandler(..., 4<<20)`. Also change `err != http.ErrServerClosed` to `errors.Is(err, http.ErrServerClosed)`. |
-| MCP-spec error responses | Add `errorResult(err error)` to `tools/helpers.go` returning `*mcp.CallToolResult` with `IsError: true`. Update all tool error returns from `return nil, nil, fmt.Errorf(...)` to `return errorResult(...)`. Per MCP spec §6, tool execution errors should use `isError: true`, not protocol-level errors. |
+| MCP-spec error responses | Add `errorResult(err error)` to `tools/helpers.go` returning the same 3-tuple as tool handlers: `(*mcp.CallToolResult, any, error)`, with `IsError: true` on the result and `nil, nil` for the other two values. Update all tool error returns from `return nil, nil, fmt.Errorf(...)` to `return errorResult(fmt.Errorf(...))`. Per MCP spec §6, tool execution errors should use `isError: true`, not protocol-level errors. |
 
 ### Tooling & CI
 
