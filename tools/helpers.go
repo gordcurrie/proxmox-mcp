@@ -7,9 +7,9 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-// jsonResult marshals v to indented JSON and returns it as a TextContent result.
+// jsonResult marshals v to compact JSON and returns it as a TextContent result.
 func jsonResult(v any) (*mcp.CallToolResult, any, error) {
-	data, err := json.MarshalIndent(v, "", "  ")
+	data, err := json.Marshal(v)
 	if err != nil {
 		return nil, nil, fmt.Errorf("marshalling result: %w", err)
 	}

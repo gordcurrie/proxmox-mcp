@@ -41,9 +41,9 @@ func TestJsonResult_success(t *testing.T) {
 	if got.Name != "pve1" || got.Value != 42 {
 		t.Errorf("got %+v, want {Name:pve1 Value:42}", got)
 	}
-	// Verify indented formatting — MarshalIndent produces newlines.
-	if !strings.Contains(tc.Text, "\n") {
-		t.Errorf("expected indented JSON output, got: %s", tc.Text)
+	// Verify compact formatting — Marshal produces no newlines.
+	if strings.Contains(tc.Text, "\n") {
+		t.Errorf("expected compact JSON output (no newlines), got: %s", tc.Text)
 	}
 }
 

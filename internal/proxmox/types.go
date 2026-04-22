@@ -69,7 +69,7 @@ type Node struct {
 // VM represents a single entry from GET /nodes/{node}/qemu.
 type VM struct {
 	VMID      int     `json:"vmid"`
-	Name      string  `json:"name"`
+	Name      string  `json:"name,omitempty"`
 	Status    string  `json:"status"`
 	CPU       float64 `json:"cpu"`
 	Mem       int64   `json:"mem"`
@@ -86,7 +86,7 @@ type VM struct {
 // Container represents a single entry from GET /nodes/{node}/lxc.
 type Container struct {
 	VMID    int     `json:"vmid"`
-	Name    string  `json:"name"`
+	Name    string  `json:"name,omitempty"`
 	Status  string  `json:"status"`
 	CPU     float64 `json:"cpu"`
 	Mem     int64   `json:"mem"`
@@ -120,8 +120,8 @@ type TaskStatus struct {
 	UPID       string `json:"upid"`
 	Node       string `json:"node"`
 	PID        int    `json:"pid"`
-	Status     string `json:"status"`     // "running" | "stopped"
-	ExitStatus string `json:"exitstatus"` // "OK" or error string
+	Status     string `json:"status"`               // "running" | "stopped"
+	ExitStatus string `json:"exitstatus,omitempty"` // "OK" or error string; empty while task is running
 	Type       string `json:"type"`
 	ID         string `json:"id"`
 	User       string `json:"user"`
