@@ -12,6 +12,8 @@ linting via `golangci-lint`/`gosec`/`govulncheck`.
 |---|---|
 | 1–6 (Foundation through CI & Releases) | ✅ Complete — 71 tools shipped (v0.6.0) |
 | 7 — Storage Management | ✅ Complete — 76 tools (v0.7.0) |
+| 8 — Network Write Operations | ✅ Complete — 80 tools (PR #25) |
+| Token optimisation | ✅ Complete — compact JSON responses, selective `omitempty` (PR #29) |
 
 ## Decisions
 
@@ -24,6 +26,7 @@ linting via `golangci-lint`/`gosec`/`govulncheck`.
 | Formatter | `gofumpt` | Stricter than `gofmt` |
 | TLS | Verify on by default; `PROXMOX_INSECURE=true` to skip | Proxmox uses self-signed certs by default |
 | Destructive tools | Opt-in via `PROXMOX_ALLOW_DESTRUCTIVE=true` | Safe by default |
+| Response format | Compact JSON (`json.Marshal`) | ~15% token reduction vs indented; no quality loss |
 
 ## Environment Variables
 
@@ -53,102 +56,6 @@ linting via `golangci-lint`/`gosec`/`govulncheck`.
 `gocritic`, `unparam`, `unconvert`, `misspell`, `prealloc`, `ineffassign`, `unused`.
 
 `InsecureSkipVerify` annotated with `//nolint:gosec // G402: user explicitly opted in via PROXMOX_INSECURE=true`.
-
----
-
-## Phase 7 — Storage Management (target: v0.7.0)
-
-**Goal**: Allow agents to register and manage storage targets cluster-wide — required for
-the Proxmox Backup Server (PBS) integration with TrueNAS and for NFS-based backup storage.
-
-Proxmox storage definitions are cluster-wide (not per-node). They live under `/storage` and
-support many types: `nfs`, `pbs`, `dir`, `cifs`, `zfspool`, etc. `type=pbs` is the key
-integration point for pointing Proxmox at a PBS instance running on TrueNAS SCALE.
-
-### End-to-end PBS + TrueNAS workflow (enabled by this phase)
-
-1. **TrueNAS** `create_dataset` — create the PBS datastore path (e.g. `tank/pbs-datastore`)
-2. **TrueNAS** `install_custom_app` — deploy PBS as a Docker Compose app, mounting the dataset
-3. **Proxmox** `add_storage` *(this phase)* — register `type=pbs` pointing at TrueNAS IP:8007
-4. **Proxmox** `create_backup` *(exists)* — run backups to the PBS storage
-
-**NFS fallback**: replace steps 2–3 with TrueNAS `create_nfs_share` (truenas-mcp Phase 10)
-and Proxmox `add_storage` with `type=nfs`.
-
-New file `internal/proxmox/storagedef.go` (separate from the existing `storage.go`, which
-handles per-node storage *content*). New file `tools/storagedef.go`. `RegisterAll` gains
-`registerStorageDefTools`.
-
-### PR #20 — Storage definition read-only (2 new tools) ✅
-
-Both get `ReadOnlyHint: true`. Tests: success + notFound for each (4 new tests).
-
-| Tool | API endpoint | Params |
-|---|---|---|
-| `list_storages` | `GET /storage` | `type` (optional filter: `nfs`, `pbs`, `dir`, `cifs`, `zfspool`, etc.) |
-| `get_storage` | `GET /storage/{storage}` | `storage` (name) |
-
-### PR #21 — Storage definition write (3 new tools) ✅
-
-`add_storage` uses `postWithBody`, `update_storage` uses `put`, `remove_storage` uses
-`delete` — no new HTTP primitives needed.
-
-`remove_storage` follows the 3-layer safety pattern (`PROXMOX_ALLOW_DESTRUCTIVE` +
-`confirmed: true` + `DestructiveHint`).
-
-New `AddStorageRequest` and `UpdateStorageRequest` structs in `types.go`. Fields use
-`omitempty` so only set fields are sent.
-
-| Tool | API endpoint | Params |
-|---|---|---|
-| `add_storage` | `POST /storage` | `storage` (name), `type` (`nfs`\|`pbs`\|`dir`\|`cifs`\|`zfspool`), `server` (optional), `export` (optional, NFS export path), `path` (optional, dir/local path), `datastore` (optional, PBS datastore name), `username` (optional, PBS/CIFS user), `password` (optional, PBS/CIFS), `content` (optional e.g. `backup,images`), `nodes` (optional, comma-sep to restrict to specific nodes) |
-| `update_storage` | `PUT /storage/{storage}` | `storage` (name, identifier only — type cannot be changed), `server` (optional), `export` (optional), `path` (optional), `datastore` (optional), `username` (optional), `password` (optional), `fingerprint` (optional), `content` (optional), `nodes` (optional), `shared` (optional) |
-| `remove_storage` | `DELETE /storage/{storage}` | `storage`, `confirmed: true` — destructive opt-in |
-
-Tests: success + apiError for add/update; success + notFound for remove.
-
-**Phase 7 target tool count:** 71 + 5 = **76 tools** (70 always-on + 6 destructive opt-in).
-
-Running total after PR #20: **73 tools** (68 always-on + 5 destructive).
-Running total after PR #21: **76 tools** (70 always-on + 6 destructive).
-
----
-
-## Phase 8 — Network Write Operations (target: v0.8.0)
-
-Exposes the Proxmox node network write API so agents can create/update/delete
-interfaces and apply changes — enabling use cases like adding static-route bridge
-interfaces or pre-configuring SDN bridges.
-
-New methods added to `internal/proxmox/network.go`.
-New MCP tools added to `tools/network.go` and `tools/destructive.go`.
-
-### PR #25 — Network interface write (4 new tools)
-
-Closes issue #24.
-
-`create_node_network_interface` and `update_node_network_interface` use
-`postWithBody` / `put` with a `NetworkInterfaceConfig` struct.
-`apply_node_network_changes` uses an empty-body `put` (applies staged changes).
-`delete_node_network_interface` follows the 3-layer safety pattern
-(`PROXMOX_ALLOW_DESTRUCTIVE` + `confirmed: true` + `DestructiveHint`).
-
-Note: all changes to interfaces are staged in `/etc/network/interfaces.new` until
-`apply_node_network_changes` is called.
-
-| Tool | API endpoint | Params |
-|---|---|---|
-| `create_node_network_interface` | `POST /nodes/{node}/network` | `node`, `iface`, `type`, plus optional address/gateway/bridge/bond fields |
-| `update_node_network_interface` | `PUT /nodes/{node}/network/{iface}` | `node`, `iface`, `type`, plus optional address/gateway/bridge/bond fields |
-| `apply_node_network_changes` | `PUT /nodes/{node}/network` | `node` |
-| `delete_node_network_interface` | `DELETE /nodes/{node}/network/{iface}` | `node`, `iface`, `confirmed: true` — destructive opt-in |
-
-Tests: success + notFound for apply/delete; success + notFound + validation for
-create/update.
-
-**Phase 8 target tool count:** 76 + 4 = **80 tools** (73 always-on + 7 destructive).
-
-Running total after PR #25: **80 tools** (73 always-on + 7 destructive).
 
 ---
 
