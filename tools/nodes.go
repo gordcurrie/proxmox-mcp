@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gordcurrie/proxmox-mcp/internal/proxmox"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // registerNodeTools adds node MCP tools to the server.
-func registerNodeTools(s *mcp.Server, client *proxmox.Client) {
+func registerNodeTools(s *mcp.Server, client proxmoxClient) {
 	type listNodesInput struct{}
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "list_nodes",
@@ -18,7 +17,7 @@ func registerNodeTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ listNodesInput) (*mcp.CallToolResult, any, error) {
 		nodes, err := client.ListNodes(ctx)
 		if err != nil {
-			return nil, nil, fmt.Errorf("list_nodes: %w", err)
+			return errorResult(fmt.Errorf("list_nodes: %w", err))
 		}
 		return jsonResult(nodes)
 	})
@@ -33,7 +32,7 @@ func registerNodeTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input nodeInput) (*mcp.CallToolResult, any, error) {
 		status, err := client.GetNodeStatus(ctx, input.Node)
 		if err != nil {
-			return nil, nil, fmt.Errorf("get_node_status: %w", err)
+			return errorResult(fmt.Errorf("get_node_status: %w", err))
 		}
 		return jsonResult(status)
 	})
@@ -45,7 +44,7 @@ func registerNodeTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input nodeInput) (*mcp.CallToolResult, any, error) {
 		storage, err := client.ListNodeStorage(ctx, input.Node)
 		if err != nil {
-			return nil, nil, fmt.Errorf("list_node_storage: %w", err)
+			return errorResult(fmt.Errorf("list_node_storage: %w", err))
 		}
 		return jsonResult(storage)
 	})
@@ -60,11 +59,11 @@ func registerNodeTools(s *mcp.Server, client *proxmox.Client) {
 		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input listNodeTasksInput) (*mcp.CallToolResult, any, error) {
 		if input.Limit < 0 {
-			return nil, nil, fmt.Errorf("list_node_tasks: limit must be >= 0, got %d", input.Limit)
+			return errorResult(fmt.Errorf("list_node_tasks: limit must be >= 0, got %d", input.Limit))
 		}
 		tasks, err := client.ListNodeTasks(ctx, input.Node, input.Limit)
 		if err != nil {
-			return nil, nil, fmt.Errorf("list_node_tasks: %w", err)
+			return errorResult(fmt.Errorf("list_node_tasks: %w", err))
 		}
 		return jsonResult(tasks)
 	})
@@ -76,7 +75,7 @@ func registerNodeTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input nodeInput) (*mcp.CallToolResult, any, error) {
 		disks, err := client.GetNodeDisks(ctx, input.Node)
 		if err != nil {
-			return nil, nil, fmt.Errorf("get_node_disks: %w", err)
+			return errorResult(fmt.Errorf("get_node_disks: %w", err))
 		}
 		return jsonResult(disks)
 	})

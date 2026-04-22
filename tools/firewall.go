@@ -9,7 +9,7 @@ import (
 )
 
 // registerFirewallTools adds read-only firewall MCP tools to the server.
-func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
+func registerFirewallTools(s *mcp.Server, client proxmoxClient) {
 	type listClusterFirewallRulesInput struct{}
 
 	mcp.AddTool(s, &mcp.Tool{
@@ -19,7 +19,7 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ listClusterFirewallRulesInput) (*mcp.CallToolResult, any, error) {
 		rules, err := client.ListClusterFirewallRules(ctx)
 		if err != nil {
-			return nil, nil, fmt.Errorf("list_cluster_firewall_rules: %w", err)
+			return errorResult(fmt.Errorf("list_cluster_firewall_rules: %w", err))
 		}
 		return jsonResult(rules)
 	})
@@ -33,7 +33,7 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ getClusterFirewallOptionsInput) (*mcp.CallToolResult, any, error) {
 		opts, err := client.GetClusterFirewallOptions(ctx)
 		if err != nil {
-			return nil, nil, fmt.Errorf("get_cluster_firewall_options: %w", err)
+			return errorResult(fmt.Errorf("get_cluster_firewall_options: %w", err))
 		}
 		return jsonResult(opts)
 	})
@@ -50,7 +50,7 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input vmFirewallInput) (*mcp.CallToolResult, any, error) {
 		rules, err := client.ListVMFirewallRules(ctx, input.Node, input.VMID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("list_vm_firewall_rules: %w", err)
+			return errorResult(fmt.Errorf("list_vm_firewall_rules: %w", err))
 		}
 		return jsonResult(rules)
 	})
@@ -62,7 +62,7 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input vmFirewallInput) (*mcp.CallToolResult, any, error) {
 		opts, err := client.GetVMFirewallOptions(ctx, input.Node, input.VMID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("get_vm_firewall_options: %w", err)
+			return errorResult(fmt.Errorf("get_vm_firewall_options: %w", err))
 		}
 		return jsonResult(opts)
 	})
@@ -79,7 +79,7 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input ctFirewallInput) (*mcp.CallToolResult, any, error) {
 		rules, err := client.ListContainerFirewallRules(ctx, input.Node, input.VMID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("list_container_firewall_rules: %w", err)
+			return errorResult(fmt.Errorf("list_container_firewall_rules: %w", err))
 		}
 		return jsonResult(rules)
 	})
@@ -91,7 +91,7 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input ctFirewallInput) (*mcp.CallToolResult, any, error) {
 		opts, err := client.GetContainerFirewallOptions(ctx, input.Node, input.VMID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("get_container_firewall_options: %w", err)
+			return errorResult(fmt.Errorf("get_container_firewall_options: %w", err))
 		}
 		return jsonResult(opts)
 	})
@@ -133,7 +133,7 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 			req.Enable = &v
 		}
 		if err := client.AddVMFirewallRule(ctx, input.Node, input.VMID, req); err != nil {
-			return nil, nil, fmt.Errorf("add_vm_firewall_rule: %w", err)
+			return errorResult(fmt.Errorf("add_vm_firewall_rule: %w", err))
 		}
 		return textResult("firewall rule added to VM")
 	})
@@ -149,7 +149,7 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 		Description: "Delete a firewall rule from a specific QEMU VM by its position. Use list_vm_firewall_rules to find rule positions (zero-based).",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input deleteVMFirewallRuleInput) (*mcp.CallToolResult, any, error) {
 		if err := client.DeleteVMFirewallRule(ctx, input.Node, input.VMID, input.Pos); err != nil {
-			return nil, nil, fmt.Errorf("delete_vm_firewall_rule: %w", err)
+			return errorResult(fmt.Errorf("delete_vm_firewall_rule: %w", err))
 		}
 		return textResult("firewall rule deleted from VM")
 	})
@@ -189,7 +189,7 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 			req.Enable = &v
 		}
 		if err := client.AddContainerFirewallRule(ctx, input.Node, input.VMID, req); err != nil {
-			return nil, nil, fmt.Errorf("add_container_firewall_rule: %w", err)
+			return errorResult(fmt.Errorf("add_container_firewall_rule: %w", err))
 		}
 		return textResult("firewall rule added to container")
 	})
@@ -205,7 +205,7 @@ func registerFirewallTools(s *mcp.Server, client *proxmox.Client) {
 		Description: "Delete a firewall rule from a specific LXC container by its position. Use list_container_firewall_rules to find rule positions (zero-based).",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input deleteCTFirewallRuleInput) (*mcp.CallToolResult, any, error) {
 		if err := client.DeleteContainerFirewallRule(ctx, input.Node, input.VMID, input.Pos); err != nil {
-			return nil, nil, fmt.Errorf("delete_container_firewall_rule: %w", err)
+			return errorResult(fmt.Errorf("delete_container_firewall_rule: %w", err))
 		}
 		return textResult("firewall rule deleted from container")
 	})

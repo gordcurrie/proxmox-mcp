@@ -2,6 +2,7 @@ package tools
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -149,5 +150,33 @@ func TestJsonResult_marshalError(t *testing.T) {
 	_, _, err := jsonResult(ch)
 	if err == nil {
 		t.Fatal("expected marshal error for channel type, got nil")
+	}
+}
+
+func TestErrorResult(t *testing.T) {
+	t.Parallel()
+
+	result, extra, err := errorResult(fmt.Errorf("something went wrong: %w", fmt.Errorf("root cause")))
+	if err != nil {
+		t.Fatalf("errorResult returned protocol error: %v", err)
+	}
+	if extra != nil {
+		t.Errorf("expected nil extra, got %v", extra)
+	}
+	if result == nil {
+		t.Fatal("expected non-nil result")
+	}
+	if !result.IsError {
+		t.Error("expected IsError=true")
+	}
+	if len(result.Content) != 1 {
+		t.Fatalf("expected 1 content item, got %d", len(result.Content))
+	}
+	tc, ok := result.Content[0].(*mcp.TextContent)
+	if !ok {
+		t.Fatalf("expected *mcp.TextContent, got %T", result.Content[0])
+	}
+	if !strings.Contains(tc.Text, "something went wrong") {
+		t.Errorf("error text %q does not contain expected message", tc.Text)
 	}
 }

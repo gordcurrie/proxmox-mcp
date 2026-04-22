@@ -45,3 +45,15 @@ func textResult(msg string) (*mcp.CallToolResult, any, error) {
 		},
 	}, nil, nil
 }
+
+// errorResult returns an MCP-spec-compliant tool error result (isError: true).
+// Per MCP spec §6, tool execution errors should use isError rather than
+// propagating a protocol-level error.
+func errorResult(err error) (*mcp.CallToolResult, any, error) {
+	return &mcp.CallToolResult{
+		IsError: true,
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: err.Error()},
+		},
+	}, nil, nil
+}

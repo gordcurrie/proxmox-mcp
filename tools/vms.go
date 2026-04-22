@@ -9,7 +9,7 @@ import (
 )
 
 // registerVMTools adds QEMU VM MCP tools to the server.
-func registerVMTools(s *mcp.Server, client *proxmox.Client) {
+func registerVMTools(s *mcp.Server, client proxmoxClient) {
 	type listVMsInput struct {
 		Node string `json:"node" jsonschema:"name of the node to list VMs on"`
 	}
@@ -20,7 +20,7 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input listVMsInput) (*mcp.CallToolResult, any, error) {
 		vms, err := client.ListVMs(ctx, input.Node)
 		if err != nil {
-			return nil, nil, fmt.Errorf("list_vms: %w", err)
+			return errorResult(fmt.Errorf("list_vms: %w", err))
 		}
 		return jsonResult(vms)
 	})
@@ -37,7 +37,7 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input vmInput) (*mcp.CallToolResult, any, error) {
 		status, err := client.GetVMStatus(ctx, input.Node, input.VMID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("get_vm_status: %w", err)
+			return errorResult(fmt.Errorf("get_vm_status: %w", err))
 		}
 		return jsonResult(status)
 	})
@@ -48,7 +48,7 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input vmInput) (*mcp.CallToolResult, any, error) {
 		upid, err := client.StartVM(ctx, input.Node, input.VMID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("start_vm: %w", err)
+			return errorResult(fmt.Errorf("start_vm: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -59,7 +59,7 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input vmInput) (*mcp.CallToolResult, any, error) {
 		upid, err := client.StopVM(ctx, input.Node, input.VMID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("stop_vm: %w", err)
+			return errorResult(fmt.Errorf("stop_vm: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -70,7 +70,7 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input vmInput) (*mcp.CallToolResult, any, error) {
 		upid, err := client.ShutdownVM(ctx, input.Node, input.VMID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("shutdown_vm: %w", err)
+			return errorResult(fmt.Errorf("shutdown_vm: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -81,7 +81,7 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input vmInput) (*mcp.CallToolResult, any, error) {
 		upid, err := client.RebootVM(ctx, input.Node, input.VMID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("reboot_vm: %w", err)
+			return errorResult(fmt.Errorf("reboot_vm: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -92,7 +92,7 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input vmInput) (*mcp.CallToolResult, any, error) {
 		upid, err := client.SuspendVM(ctx, input.Node, input.VMID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("suspend_vm: %w", err)
+			return errorResult(fmt.Errorf("suspend_vm: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -103,7 +103,7 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input vmInput) (*mcp.CallToolResult, any, error) {
 		upid, err := client.ResumeVM(ctx, input.Node, input.VMID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("resume_vm: %w", err)
+			return errorResult(fmt.Errorf("resume_vm: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -139,7 +139,7 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		upid, err := client.CreateVM(ctx, input.Node, &req)
 		if err != nil {
-			return nil, nil, fmt.Errorf("create_vm: %w", err)
+			return errorResult(fmt.Errorf("create_vm: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -162,7 +162,7 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		upid, err := client.CloneVM(ctx, input.Node, input.VMID, &req)
 		if err != nil {
-			return nil, nil, fmt.Errorf("clone_vm: %w", err)
+			return errorResult(fmt.Errorf("clone_vm: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -174,7 +174,7 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input vmInput) (*mcp.CallToolResult, any, error) {
 		config, err := client.GetVMConfig(ctx, input.Node, input.VMID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("get_vm_config: %w", err)
+			return errorResult(fmt.Errorf("get_vm_config: %w", err))
 		}
 		return jsonResult(config)
 	})
@@ -208,7 +208,7 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 			Description: input.Description,
 		}
 		if err := client.SetVMConfig(ctx, input.Node, input.VMID, &req); err != nil {
-			return nil, nil, fmt.Errorf("set_vm_config: %w", err)
+			return errorResult(fmt.Errorf("set_vm_config: %w", err))
 		}
 		return jsonResult(map[string]string{"status": "ok"})
 	})
@@ -226,7 +226,7 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 		req := proxmox.ResizeDiskRequest{Disk: input.Disk, Size: input.Size}
 		upid, err := client.ResizeVMDisk(ctx, input.Node, input.VMID, &req)
 		if err != nil {
-			return nil, nil, fmt.Errorf("resize_vm_disk: %w", err)
+			return errorResult(fmt.Errorf("resize_vm_disk: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -249,7 +249,7 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 		req := proxmox.MigrateVMRequest{Target: input.Target, Online: online}
 		upid, err := client.MigrateVM(ctx, input.Node, input.VMID, &req)
 		if err != nil {
-			return nil, nil, fmt.Errorf("migrate_vm: %w", err)
+			return errorResult(fmt.Errorf("migrate_vm: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -277,7 +277,7 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		upid, err := client.RestoreVM(ctx, input.Node, &req)
 		if err != nil {
-			return nil, nil, fmt.Errorf("restore_vm: %w", err)
+			return errorResult(fmt.Errorf("restore_vm: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -303,7 +303,7 @@ func registerVMTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		upid, err := client.MoveVMDisk(ctx, input.Node, input.VMID, &req)
 		if err != nil {
-			return nil, nil, fmt.Errorf("move_vm_disk: %w", err)
+			return errorResult(fmt.Errorf("move_vm_disk: %w", err))
 		}
 		return taskResult(upid)
 	})

@@ -20,6 +20,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -90,8 +91,11 @@ func run() error {
 		}, nil)
 		httpServer := &http.Server{
 			Addr:              *addr,
-			Handler:           handler,
+			Handler:           http.MaxBytesHandler(handler, 4<<20),
 			ReadHeaderTimeout: 30 * time.Second,
+			ReadTimeout:       30 * time.Second,
+			IdleTimeout:       120 * time.Second,
+			MaxHeaderBytes:    1 << 20,
 		}
 		slog.Info("proxmox-mcp listening", "addr", *addr, "transport", "http")
 		go func() {
@@ -102,7 +106,7 @@ func run() error {
 				slog.Warn("HTTP server shutdown error", "err", shutdownErr)
 			}
 		}()
-		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			return fmt.Errorf("http server: %w", err)
 		}
 	default:

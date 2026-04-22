@@ -9,7 +9,7 @@ import (
 )
 
 // registerPoolTools adds pool management MCP tools to the server.
-func registerPoolTools(s *mcp.Server, client *proxmox.Client) {
+func registerPoolTools(s *mcp.Server, client proxmoxClient) {
 	type listPoolsInput struct{}
 
 	mcp.AddTool(s, &mcp.Tool{
@@ -21,7 +21,7 @@ func registerPoolTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ listPoolsInput) (*mcp.CallToolResult, any, error) {
 		pools, err := client.ListPools(ctx)
 		if err != nil {
-			return nil, nil, fmt.Errorf("list_pools: %w", err)
+			return errorResult(fmt.Errorf("list_pools: %w", err))
 		}
 
 		return jsonResult(pools)
@@ -38,7 +38,7 @@ func registerPoolTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input getPoolInput) (*mcp.CallToolResult, any, error) {
 		pool, err := client.GetPool(ctx, input.PoolID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("get_pool: %w", err)
+			return errorResult(fmt.Errorf("get_pool: %w", err))
 		}
 
 		return jsonResult(pool)
@@ -58,7 +58,7 @@ func registerPoolTools(s *mcp.Server, client *proxmox.Client) {
 			Comment: input.Comment,
 		}
 		if err := client.CreatePool(ctx, req); err != nil {
-			return nil, nil, fmt.Errorf("create_pool: %w", err)
+			return errorResult(fmt.Errorf("create_pool: %w", err))
 		}
 
 		return textResult("pool created: " + input.PoolID)
@@ -86,7 +86,7 @@ func registerPoolTools(s *mcp.Server, client *proxmox.Client) {
 			req.Delete = &v
 		}
 		if err := client.UpdatePool(ctx, input.PoolID, req); err != nil {
-			return nil, nil, fmt.Errorf("update_pool: %w", err)
+			return errorResult(fmt.Errorf("update_pool: %w", err))
 		}
 
 		return textResult("pool updated: " + input.PoolID)

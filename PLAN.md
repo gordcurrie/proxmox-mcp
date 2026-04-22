@@ -14,6 +14,7 @@ linting via `golangci-lint`/`gosec`/`govulncheck`.
 | 7 — Storage Management | ✅ Complete — 76 tools (v0.7.0) |
 | 8 — Network Write Operations | ✅ Complete — 80 tools (PR #25) |
 | Token optimisation | ✅ Complete — compact JSON responses, selective `omitempty` (PR #29) |
+| Quality Parity with unifi-mcp | ✅ Complete — hardening, CI workflows, interface + tests (PR #32) |
 
 ## Decisions
 
@@ -59,7 +60,7 @@ linting via `golangci-lint`/`gosec`/`govulncheck`.
 
 ---
 
-## Upcoming: Quality Parity with unifi-mcp
+## Quality Parity with unifi-mcp ✅
 
 These items bring proxmox-mcp to the same baseline as the unifi-mcp reference implementation.
 Each is a distinct, independently reviewable change.

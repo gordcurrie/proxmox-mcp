@@ -12,7 +12,10 @@ import (
 	"time"
 )
 
-const defaultTimeout = 30 * time.Second
+const (
+	defaultTimeout   = 30 * time.Second
+	maxResponseBytes = 10 << 20 // 10 MiB — prevents memory exhaustion on unexpectedly large responses
+)
 
 // Client is a Proxmox VE API client that authenticates using API tokens.
 // All methods require a context.Context as the first parameter.
@@ -82,7 +85,7 @@ func (c *Client) get(ctx context.Context, path string, result any) error {
 		}
 	}()
 
-	return c.decode(resp.Body, result)
+	return c.decode(io.LimitReader(resp.Body, maxResponseBytes), result)
 }
 
 // post performs an authenticated POST request to path (relative to baseURL).
@@ -99,7 +102,7 @@ func (c *Client) post(ctx context.Context, path string, result any) error {
 		}
 	}()
 
-	return c.decode(resp.Body, result)
+	return c.decode(io.LimitReader(resp.Body, maxResponseBytes), result)
 }
 
 // postWithBody performs an authenticated POST request to path with body
@@ -122,7 +125,7 @@ func (c *Client) postWithBody(ctx context.Context, path string, body, result any
 		}
 	}()
 
-	return c.decode(resp.Body, result)
+	return c.decode(io.LimitReader(resp.Body, maxResponseBytes), result)
 }
 
 // delete performs an authenticated DELETE request to path (relative to
@@ -140,7 +143,7 @@ func (c *Client) delete(ctx context.Context, path string, result any) error {
 		}
 	}()
 
-	return c.decode(resp.Body, result)
+	return c.decode(io.LimitReader(resp.Body, maxResponseBytes), result)
 }
 
 // put performs an authenticated PUT request to path with body marshalled as
@@ -162,7 +165,7 @@ func (c *Client) put(ctx context.Context, path string, body, result any) error {
 		}
 	}()
 
-	return c.decode(resp.Body, result)
+	return c.decode(io.LimitReader(resp.Body, maxResponseBytes), result)
 }
 
 // do constructs and executes an HTTP request, handling auth headers and error
@@ -191,7 +194,7 @@ func (c *Client) do(ctx context.Context, method, path string, body io.Reader) (*
 	}
 
 	if resp.StatusCode >= http.StatusBadRequest {
-		rawBody, _ := io.ReadAll(resp.Body)
+		rawBody, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 		if err := resp.Body.Close(); err != nil {
 			slog.Warn("closing error response body", "err", err)
 		}
