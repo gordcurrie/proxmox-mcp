@@ -9,7 +9,7 @@ import (
 )
 
 // registerStorageDefTools adds cluster-wide storage definition MCP tools to the server.
-func registerStorageDefTools(s *mcp.Server, client *proxmox.Client) {
+func registerStorageDefTools(s *mcp.Server, client proxmoxClient) {
 	type listStoragesInput struct {
 		Type string `json:"type,omitempty" jsonschema:"optional storage type filter: nfs, pbs, dir, cifs, zfspool, lvmthin, etc."`
 	}
@@ -20,7 +20,7 @@ func registerStorageDefTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input listStoragesInput) (*mcp.CallToolResult, any, error) {
 		storages, err := client.ListStorages(ctx, input.Type)
 		if err != nil {
-			return nil, nil, fmt.Errorf("list_storages: %w", err)
+			return errorResult(fmt.Errorf("list_storages: %w", err))
 		}
 		return jsonResult(storages)
 	})
@@ -35,7 +35,7 @@ func registerStorageDefTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input getStorageInput) (*mcp.CallToolResult, any, error) {
 		storage, err := client.GetStorage(ctx, input.Storage)
 		if err != nil {
-			return nil, nil, fmt.Errorf("get_storage: %w", err)
+			return errorResult(fmt.Errorf("get_storage: %w", err))
 		}
 		return jsonResult(storage)
 	})
@@ -76,7 +76,7 @@ func registerStorageDefTools(s *mcp.Server, client *proxmox.Client) {
 			req.Shared = &one
 		}
 		if _, err := client.AddStorage(ctx, req); err != nil {
-			return nil, nil, fmt.Errorf("add_storage: %w", err)
+			return errorResult(fmt.Errorf("add_storage: %w", err))
 		}
 		return jsonResult(map[string]string{"storage": input.Storage, "status": "created"})
 	})
@@ -119,7 +119,7 @@ func registerStorageDefTools(s *mcp.Server, client *proxmox.Client) {
 			}
 		}
 		if err := client.UpdateStorage(ctx, input.Storage, req); err != nil {
-			return nil, nil, fmt.Errorf("update_storage: %w", err)
+			return errorResult(fmt.Errorf("update_storage: %w", err))
 		}
 		return jsonResult(map[string]string{"storage": input.Storage, "status": "updated"})
 	})

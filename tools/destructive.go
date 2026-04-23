@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gordcurrie/proxmox-mcp/internal/proxmox"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -14,7 +13,7 @@ var destructiveHint = true
 
 // registerDestructiveTools adds delete MCP tools to the server.
 // These tools are only registered when PROXMOX_ALLOW_DESTRUCTIVE=true.
-func registerDestructiveTools(s *mcp.Server, client *proxmox.Client) {
+func registerDestructiveTools(s *mcp.Server, client proxmoxClient) {
 	type deleteVMInput struct {
 		Node      string `json:"node"           jsonschema:"node the VM is on"`
 		VMID      int    `json:"vmid"           jsonschema:"numeric VM ID"`
@@ -29,11 +28,11 @@ func registerDestructiveTools(s *mcp.Server, client *proxmox.Client) {
 		},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input deleteVMInput) (*mcp.CallToolResult, any, error) {
 		if !input.Confirmed {
-			return nil, nil, errors.New("delete_vm: confirmed must be true to proceed with deletion")
+			return errorResult(errors.New("delete_vm: confirmed must be true to proceed with deletion"))
 		}
 		upid, err := client.DeleteVM(ctx, input.Node, input.VMID, input.Purge)
 		if err != nil {
-			return nil, nil, fmt.Errorf("delete_vm: %w", err)
+			return errorResult(fmt.Errorf("delete_vm: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -52,11 +51,11 @@ func registerDestructiveTools(s *mcp.Server, client *proxmox.Client) {
 		},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input deleteContainerInput) (*mcp.CallToolResult, any, error) {
 		if !input.Confirmed {
-			return nil, nil, errors.New("delete_container: confirmed must be true to proceed with deletion")
+			return errorResult(errors.New("delete_container: confirmed must be true to proceed with deletion"))
 		}
 		upid, err := client.DeleteContainer(ctx, input.Node, input.VMID, input.Purge)
 		if err != nil {
-			return nil, nil, fmt.Errorf("delete_container: %w", err)
+			return errorResult(fmt.Errorf("delete_container: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -73,10 +72,10 @@ func registerDestructiveTools(s *mcp.Server, client *proxmox.Client) {
 		},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input removeStorageInput) (*mcp.CallToolResult, any, error) {
 		if !input.Confirmed {
-			return nil, nil, errors.New("remove_storage: confirmed must be true to proceed with removal")
+			return errorResult(errors.New("remove_storage: confirmed must be true to proceed with removal"))
 		}
 		if err := client.RemoveStorage(ctx, input.Storage); err != nil {
-			return nil, nil, fmt.Errorf("remove_storage: %w", err)
+			return errorResult(fmt.Errorf("remove_storage: %w", err))
 		}
 		return jsonResult(map[string]string{"storage": input.Storage, "status": "removed"})
 	})
@@ -95,11 +94,11 @@ func registerDestructiveTools(s *mcp.Server, client *proxmox.Client) {
 		},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input deleteStorageContentInput) (*mcp.CallToolResult, any, error) {
 		if !input.Confirmed {
-			return nil, nil, errors.New("delete_storage_content: confirmed must be true to proceed with deletion")
+			return errorResult(errors.New("delete_storage_content: confirmed must be true to proceed with deletion"))
 		}
 		upid, err := client.DeleteStorageContent(ctx, input.Node, input.Storage, input.Volume)
 		if err != nil {
-			return nil, nil, fmt.Errorf("delete_storage_content: %w", err)
+			return errorResult(fmt.Errorf("delete_storage_content: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -116,10 +115,10 @@ func registerDestructiveTools(s *mcp.Server, client *proxmox.Client) {
 		},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input nodeCommandInput) (*mcp.CallToolResult, any, error) {
 		if !input.Confirmed {
-			return nil, nil, errors.New("reboot_node: confirmed must be true to proceed")
+			return errorResult(errors.New("reboot_node: confirmed must be true to proceed"))
 		}
 		if err := client.NodeCommand(ctx, input.Node, "reboot"); err != nil {
-			return nil, nil, fmt.Errorf("reboot_node: %w", err)
+			return errorResult(fmt.Errorf("reboot_node: %w", err))
 		}
 		return textResult("Reboot command sent to node " + input.Node)
 	})
@@ -132,10 +131,10 @@ func registerDestructiveTools(s *mcp.Server, client *proxmox.Client) {
 		},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input nodeCommandInput) (*mcp.CallToolResult, any, error) {
 		if !input.Confirmed {
-			return nil, nil, errors.New("shutdown_node: confirmed must be true to proceed")
+			return errorResult(errors.New("shutdown_node: confirmed must be true to proceed"))
 		}
 		if err := client.NodeCommand(ctx, input.Node, "shutdown"); err != nil {
-			return nil, nil, fmt.Errorf("shutdown_node: %w", err)
+			return errorResult(fmt.Errorf("shutdown_node: %w", err))
 		}
 		return textResult("Shutdown command sent to node " + input.Node)
 	})
@@ -152,10 +151,10 @@ func registerDestructiveTools(s *mcp.Server, client *proxmox.Client) {
 		},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input deletePoolInput) (*mcp.CallToolResult, any, error) {
 		if !input.Confirmed {
-			return nil, nil, errors.New("delete_pool: confirmed must be true to proceed with deletion")
+			return errorResult(errors.New("delete_pool: confirmed must be true to proceed with deletion"))
 		}
 		if err := client.DeletePool(ctx, input.PoolID); err != nil {
-			return nil, nil, fmt.Errorf("delete_pool: %w", err)
+			return errorResult(fmt.Errorf("delete_pool: %w", err))
 		}
 		return textResult("pool deleted: " + input.PoolID)
 	})
@@ -173,10 +172,10 @@ func registerDestructiveTools(s *mcp.Server, client *proxmox.Client) {
 		},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input deleteNodeNetworkInterfaceInput) (*mcp.CallToolResult, any, error) {
 		if !input.Confirmed {
-			return nil, nil, errors.New("delete_node_network_interface: confirmed must be true to proceed with deletion")
+			return errorResult(errors.New("delete_node_network_interface: confirmed must be true to proceed with deletion"))
 		}
 		if err := client.DeleteNodeNetworkInterface(ctx, input.Node, input.Iface); err != nil {
-			return nil, nil, fmt.Errorf("delete_node_network_interface: %w", err)
+			return errorResult(fmt.Errorf("delete_node_network_interface: %w", err))
 		}
 		return jsonResult(map[string]string{
 			"node":   input.Node,

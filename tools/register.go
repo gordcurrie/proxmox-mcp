@@ -2,7 +2,6 @@
 package tools
 
 import (
-	"github.com/gordcurrie/proxmox-mcp/internal/proxmox"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -15,7 +14,7 @@ type Config struct {
 }
 
 // RegisterAll wires all Proxmox MCP tools onto the provided server.
-func RegisterAll(s *mcp.Server, client *proxmox.Client, cfg Config) {
+func RegisterAll(s *mcp.Server, client proxmoxClient, cfg Config) {
 	registerNodeTools(s, client)
 	registerVMTools(s, client)
 	registerContainerTools(s, client)

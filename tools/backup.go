@@ -9,7 +9,7 @@ import (
 )
 
 // registerBackupTools adds backup MCP tools to the server.
-func registerBackupTools(s *mcp.Server, client *proxmox.Client) {
+func registerBackupTools(s *mcp.Server, client proxmoxClient) {
 	type createBackupInput struct {
 		Node     string `json:"node"              jsonschema:"name of the node the VM or container is on"`
 		VMID     int    `json:"vmid"              jsonschema:"numeric VM or container ID to back up"`
@@ -29,7 +29,7 @@ func registerBackupTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		upid, err := client.CreateBackup(ctx, input.Node, req)
 		if err != nil {
-			return nil, nil, fmt.Errorf("create_backup: %w", err)
+			return errorResult(fmt.Errorf("create_backup: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -45,7 +45,7 @@ func registerBackupTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input listBackupsInput) (*mcp.CallToolResult, any, error) {
 		backups, err := client.ListBackups(ctx, input.Node, input.Storage)
 		if err != nil {
-			return nil, nil, fmt.Errorf("list_backups: %w", err)
+			return errorResult(fmt.Errorf("list_backups: %w", err))
 		}
 		return jsonResult(backups)
 	})

@@ -9,7 +9,7 @@ import (
 )
 
 // registerNetworkTools adds node network MCP tools to the server.
-func registerNetworkTools(s *mcp.Server, client *proxmox.Client) {
+func registerNetworkTools(s *mcp.Server, client proxmoxClient) {
 	type listNodeNetworkInput struct {
 		Node string `json:"node" jsonschema:"name of the node (e.g. pve)"`
 		Type string `json:"type,omitempty" jsonschema:"optional interface type filter: bridge, bond, eth, alias, vlan, OVSBridge, OVSBond, OVSPort, OVSIntPort, any_bridge"`
@@ -21,7 +21,7 @@ func registerNetworkTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input listNodeNetworkInput) (*mcp.CallToolResult, any, error) {
 		ifaces, err := client.ListNodeNetwork(ctx, input.Node, input.Type)
 		if err != nil {
-			return nil, nil, fmt.Errorf("list_node_network: %w", err)
+			return errorResult(fmt.Errorf("list_node_network: %w", err))
 		}
 		return jsonResult(ifaces)
 	})
@@ -37,7 +37,7 @@ func registerNetworkTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input getNodeNetworkInterfaceInput) (*mcp.CallToolResult, any, error) {
 		iface, err := client.GetNodeNetworkInterface(ctx, input.Node, input.Iface)
 		if err != nil {
-			return nil, nil, fmt.Errorf("get_node_network_interface: %w", err)
+			return errorResult(fmt.Errorf("get_node_network_interface: %w", err))
 		}
 		return jsonResult(iface)
 	})
@@ -82,7 +82,7 @@ func registerNetworkTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		result, err := client.CreateNodeNetworkInterface(ctx, input.Node, input.Iface, cfg)
 		if err != nil {
-			return nil, nil, fmt.Errorf("create_node_network_interface: %w", err)
+			return errorResult(fmt.Errorf("create_node_network_interface: %w", err))
 		}
 		return jsonResult(result)
 	})
@@ -126,7 +126,7 @@ func registerNetworkTools(s *mcp.Server, client *proxmox.Client) {
 			Comments:    input.Comments,
 		}
 		if err := client.UpdateNodeNetworkInterface(ctx, input.Node, input.Iface, cfg); err != nil {
-			return nil, nil, fmt.Errorf("update_node_network_interface: %w", err)
+			return errorResult(fmt.Errorf("update_node_network_interface: %w", err))
 		}
 		return jsonResult(map[string]string{"node": input.Node, "iface": input.Iface, "status": "updated"})
 	})
@@ -139,7 +139,7 @@ func registerNetworkTools(s *mcp.Server, client *proxmox.Client) {
 		Description: "Apply all staged network configuration changes on a Proxmox node, reloading the network stack. Must be called after create_node_network_interface, update_node_network_interface, or delete_node_network_interface to make changes take effect.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input applyNodeNetworkChangesInput) (*mcp.CallToolResult, any, error) {
 		if err := client.ApplyNodeNetworkChanges(ctx, input.Node); err != nil {
-			return nil, nil, fmt.Errorf("apply_node_network_changes: %w", err)
+			return errorResult(fmt.Errorf("apply_node_network_changes: %w", err))
 		}
 		return textResult("network changes applied on node " + input.Node)
 	})

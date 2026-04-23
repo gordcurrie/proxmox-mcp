@@ -9,7 +9,7 @@ import (
 )
 
 // registerContainerTools adds LXC container MCP tools to the server.
-func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
+func registerContainerTools(s *mcp.Server, client proxmoxClient) {
 	type listContainersInput struct {
 		Node string `json:"node" jsonschema:"name of the node to list containers on"`
 	}
@@ -20,7 +20,7 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input listContainersInput) (*mcp.CallToolResult, any, error) {
 		containers, err := client.ListContainers(ctx, input.Node)
 		if err != nil {
-			return nil, nil, fmt.Errorf("list_containers: %w", err)
+			return errorResult(fmt.Errorf("list_containers: %w", err))
 		}
 		return jsonResult(containers)
 	})
@@ -37,7 +37,7 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input containerInput) (*mcp.CallToolResult, any, error) {
 		status, err := client.GetContainerStatus(ctx, input.Node, input.VMID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("get_container_status: %w", err)
+			return errorResult(fmt.Errorf("get_container_status: %w", err))
 		}
 		return jsonResult(status)
 	})
@@ -48,7 +48,7 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input containerInput) (*mcp.CallToolResult, any, error) {
 		upid, err := client.StartContainer(ctx, input.Node, input.VMID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("start_container: %w", err)
+			return errorResult(fmt.Errorf("start_container: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -59,7 +59,7 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input containerInput) (*mcp.CallToolResult, any, error) {
 		upid, err := client.StopContainer(ctx, input.Node, input.VMID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("stop_container: %w", err)
+			return errorResult(fmt.Errorf("stop_container: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -70,7 +70,7 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input containerInput) (*mcp.CallToolResult, any, error) {
 		upid, err := client.ShutdownContainer(ctx, input.Node, input.VMID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("shutdown_container: %w", err)
+			return errorResult(fmt.Errorf("shutdown_container: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -81,7 +81,7 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input containerInput) (*mcp.CallToolResult, any, error) {
 		upid, err := client.RebootContainer(ctx, input.Node, input.VMID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("reboot_container: %w", err)
+			return errorResult(fmt.Errorf("reboot_container: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -117,7 +117,7 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		upid, err := client.CreateContainer(ctx, input.Node, &req)
 		if err != nil {
-			return nil, nil, fmt.Errorf("create_container: %w", err)
+			return errorResult(fmt.Errorf("create_container: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -140,7 +140,7 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		upid, err := client.CloneContainer(ctx, input.Node, input.VMID, &req)
 		if err != nil {
-			return nil, nil, fmt.Errorf("clone_container: %w", err)
+			return errorResult(fmt.Errorf("clone_container: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -152,7 +152,7 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input containerInput) (*mcp.CallToolResult, any, error) {
 		config, err := client.GetContainerConfig(ctx, input.Node, input.VMID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("get_container_config: %w", err)
+			return errorResult(fmt.Errorf("get_container_config: %w", err))
 		}
 		return jsonResult(config)
 	})
@@ -186,7 +186,7 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 			Description: input.Description,
 		}
 		if err := client.SetContainerConfig(ctx, input.Node, input.VMID, &req); err != nil {
-			return nil, nil, fmt.Errorf("set_container_config: %w", err)
+			return errorResult(fmt.Errorf("set_container_config: %w", err))
 		}
 		return jsonResult(map[string]string{"status": "ok"})
 	})
@@ -204,7 +204,7 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 		req := proxmox.ResizeDiskRequest{Disk: input.Disk, Size: input.Size}
 		upid, err := client.ResizeContainerDisk(ctx, input.Node, input.VMID, &req)
 		if err != nil {
-			return nil, nil, fmt.Errorf("resize_container_disk: %w", err)
+			return errorResult(fmt.Errorf("resize_container_disk: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -227,7 +227,7 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 		req := proxmox.MigrateContainerRequest{Target: input.Target, Restart: restart}
 		upid, err := client.MigrateContainer(ctx, input.Node, input.VMID, &req)
 		if err != nil {
-			return nil, nil, fmt.Errorf("migrate_container: %w", err)
+			return errorResult(fmt.Errorf("migrate_container: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -257,7 +257,7 @@ func registerContainerTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		upid, err := client.RestoreContainer(ctx, input.Node, &req)
 		if err != nil {
-			return nil, nil, fmt.Errorf("restore_container: %w", err)
+			return errorResult(fmt.Errorf("restore_container: %w", err))
 		}
 		return taskResult(upid)
 	})

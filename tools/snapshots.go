@@ -9,7 +9,7 @@ import (
 )
 
 // registerSnapshotTools adds snapshot MCP tools to the server.
-func registerSnapshotTools(s *mcp.Server, client *proxmox.Client) {
+func registerSnapshotTools(s *mcp.Server, client proxmoxClient) {
 	type vmSnapInput struct {
 		Node     string `json:"node" jsonschema:"node the VM is on"`
 		VMID     int    `json:"vmid" jsonschema:"numeric VM ID"`
@@ -35,7 +35,7 @@ func registerSnapshotTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input listVMSnapsInput) (*mcp.CallToolResult, any, error) {
 		snaps, err := client.ListVMSnapshots(ctx, input.Node, input.VMID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("list_vm_snapshots: %w", err)
+			return errorResult(fmt.Errorf("list_vm_snapshots: %w", err))
 		}
 		return jsonResult(snaps)
 	})
@@ -62,7 +62,7 @@ func registerSnapshotTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		upid, err := client.CreateVMSnapshot(ctx, input.Node, input.VMID, req)
 		if err != nil {
-			return nil, nil, fmt.Errorf("create_vm_snapshot: %w", err)
+			return errorResult(fmt.Errorf("create_vm_snapshot: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -73,7 +73,7 @@ func registerSnapshotTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input vmSnapInput) (*mcp.CallToolResult, any, error) {
 		upid, err := client.RollbackVMSnapshot(ctx, input.Node, input.VMID, input.Snapname)
 		if err != nil {
-			return nil, nil, fmt.Errorf("rollback_vm_snapshot: %w", err)
+			return errorResult(fmt.Errorf("rollback_vm_snapshot: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -84,7 +84,7 @@ func registerSnapshotTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input vmSnapInput) (*mcp.CallToolResult, any, error) {
 		upid, err := client.DeleteVMSnapshot(ctx, input.Node, input.VMID, input.Snapname)
 		if err != nil {
-			return nil, nil, fmt.Errorf("delete_vm_snapshot: %w", err)
+			return errorResult(fmt.Errorf("delete_vm_snapshot: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -102,7 +102,7 @@ func registerSnapshotTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input listCTSnapsInput) (*mcp.CallToolResult, any, error) {
 		snaps, err := client.ListContainerSnapshots(ctx, input.Node, input.VMID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("list_container_snapshots: %w", err)
+			return errorResult(fmt.Errorf("list_container_snapshots: %w", err))
 		}
 		return jsonResult(snaps)
 	})
@@ -123,7 +123,7 @@ func registerSnapshotTools(s *mcp.Server, client *proxmox.Client) {
 		}
 		upid, err := client.CreateContainerSnapshot(ctx, input.Node, input.VMID, req)
 		if err != nil {
-			return nil, nil, fmt.Errorf("create_container_snapshot: %w", err)
+			return errorResult(fmt.Errorf("create_container_snapshot: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -134,7 +134,7 @@ func registerSnapshotTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input ctSnapInput) (*mcp.CallToolResult, any, error) {
 		upid, err := client.RollbackContainerSnapshot(ctx, input.Node, input.VMID, input.Snapname)
 		if err != nil {
-			return nil, nil, fmt.Errorf("rollback_container_snapshot: %w", err)
+			return errorResult(fmt.Errorf("rollback_container_snapshot: %w", err))
 		}
 		return taskResult(upid)
 	})
@@ -145,7 +145,7 @@ func registerSnapshotTools(s *mcp.Server, client *proxmox.Client) {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input ctSnapInput) (*mcp.CallToolResult, any, error) {
 		upid, err := client.DeleteContainerSnapshot(ctx, input.Node, input.VMID, input.Snapname)
 		if err != nil {
-			return nil, nil, fmt.Errorf("delete_container_snapshot: %w", err)
+			return errorResult(fmt.Errorf("delete_container_snapshot: %w", err))
 		}
 		return taskResult(upid)
 	})
