@@ -89,9 +89,8 @@ func assertError(t *testing.T, res *mcp.CallToolResult, wantContains string) {
 }
 
 // assertResultJSON fails the test if result has IsError set, has no content,
-// or if the content is not valid non-empty JSON. It returns the raw JSON text
-// so callers can perform additional assertions.
-func assertResultJSON(t *testing.T, res *mcp.CallToolResult) string { //nolint:unparam // return used by callers that inspect specific fields
+// or if the content is not valid non-empty JSON.
+func assertResultJSON(t *testing.T, res *mcp.CallToolResult) {
 	t.Helper()
 	assertSuccess(t, res)
 	if len(res.Content) == 0 {
@@ -107,5 +106,4 @@ func assertResultJSON(t *testing.T, res *mcp.CallToolResult) string { //nolint:u
 	if !json.Valid([]byte(tc.Text)) {
 		t.Fatalf("content is not valid JSON: %q", tc.Text)
 	}
-	return tc.Text
 }
