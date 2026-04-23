@@ -19,7 +19,7 @@ func TestListVMSnapshots(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "list_vm_snapshots", map[string]any{"node": "pve1", "vmid": 100})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {
@@ -52,7 +52,7 @@ func TestCreateVMSnapshot(t *testing.T) {
 			"vmid":     100,
 			"snapname": "pre-upgrade",
 		})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {
@@ -84,6 +84,6 @@ func TestListContainerSnapshots(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "list_container_snapshots", map[string]any{"node": "pve1", "vmid": 200})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 }

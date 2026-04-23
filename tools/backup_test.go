@@ -25,7 +25,7 @@ func TestCreateBackup(t *testing.T) {
 			"storage": "local",
 			"mode":    "snapshot",
 		})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {
@@ -57,7 +57,7 @@ func TestListBackups(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "list_backups", map[string]any{"node": "pve1", "storage": "local"})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {

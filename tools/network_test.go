@@ -17,7 +17,7 @@ func TestListNodeNetwork(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "list_node_network", map[string]any{"node": "pve1"})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {
@@ -45,7 +45,7 @@ func TestGetNodeNetworkInterface(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "get_node_network_interface", map[string]any{"node": "pve1", "iface": "vmbr0"})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {

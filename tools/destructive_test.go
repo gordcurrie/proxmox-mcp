@@ -18,7 +18,7 @@ func TestDeleteVM(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "delete_vm", map[string]any{"node": "pve1", "vmid": 100, "confirmed": true})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {
@@ -47,7 +47,7 @@ func TestDeleteContainer(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "delete_container", map[string]any{"node": "pve1", "vmid": 200, "confirmed": true})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {

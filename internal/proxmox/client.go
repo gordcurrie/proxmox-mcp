@@ -85,7 +85,7 @@ func (c *Client) get(ctx context.Context, path string, result any) error {
 		}
 	}()
 
-	return c.decode(io.LimitReader(resp.Body, maxResponseBytes), result)
+	return c.decodeBody(resp.Body, result)
 }
 
 // post performs an authenticated POST request to path (relative to baseURL).
@@ -102,7 +102,7 @@ func (c *Client) post(ctx context.Context, path string, result any) error {
 		}
 	}()
 
-	return c.decode(io.LimitReader(resp.Body, maxResponseBytes), result)
+	return c.decodeBody(resp.Body, result)
 }
 
 // postWithBody performs an authenticated POST request to path with body
@@ -125,7 +125,7 @@ func (c *Client) postWithBody(ctx context.Context, path string, body, result any
 		}
 	}()
 
-	return c.decode(io.LimitReader(resp.Body, maxResponseBytes), result)
+	return c.decodeBody(resp.Body, result)
 }
 
 // delete performs an authenticated DELETE request to path (relative to
@@ -143,7 +143,7 @@ func (c *Client) delete(ctx context.Context, path string, result any) error {
 		}
 	}()
 
-	return c.decode(io.LimitReader(resp.Body, maxResponseBytes), result)
+	return c.decodeBody(resp.Body, result)
 }
 
 // put performs an authenticated PUT request to path with body marshalled as
@@ -165,7 +165,7 @@ func (c *Client) put(ctx context.Context, path string, body, result any) error {
 		}
 	}()
 
-	return c.decode(io.LimitReader(resp.Body, maxResponseBytes), result)
+	return c.decodeBody(resp.Body, result)
 }
 
 // do constructs and executes an HTTP request, handling auth headers and error
@@ -218,4 +218,16 @@ func (c *Client) decode(r io.Reader, result any) error {
 		return fmt.Errorf("decoding API data: %w", err)
 	}
 	return nil
+}
+
+// decodeBody wraps body in an io.LimitedReader before calling decode. If the
+// limit is exhausted the response was truncated, and a clear error is returned
+// instead of the opaque "unexpected EOF" that the JSON decoder would produce.
+func (c *Client) decodeBody(body io.Reader, result any) error {
+	lr := &io.LimitedReader{R: body, N: maxResponseBytes}
+	err := c.decode(lr, result)
+	if err != nil && lr.N == 0 {
+		return fmt.Errorf("response body exceeded %d-byte limit", maxResponseBytes)
+	}
+	return err
 }

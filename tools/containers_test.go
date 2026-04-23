@@ -19,7 +19,7 @@ func TestListContainers(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "list_containers", map[string]any{"node": "pve1"})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {
@@ -48,7 +48,7 @@ func TestStartContainer(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "start_container", map[string]any{"node": "pve1", "vmid": 200})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {

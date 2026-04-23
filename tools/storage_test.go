@@ -22,7 +22,7 @@ func TestListStorageContent(t *testing.T) {
 			"node":    "pve1",
 			"storage": "local",
 		})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {
@@ -54,7 +54,7 @@ func TestGetStorageContentInfo(t *testing.T) {
 			"storage": "local",
 			"volume":  "local:iso/debian.iso",
 		})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {

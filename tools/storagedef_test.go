@@ -17,7 +17,7 @@ func TestListStorages(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "list_storages", nil)
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {
@@ -45,7 +45,7 @@ func TestGetStorage(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "get_storage", map[string]any{"storage": "local"})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {

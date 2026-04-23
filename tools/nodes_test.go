@@ -19,7 +19,7 @@ func TestListNodes(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "list_nodes", nil)
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates client error as isError", func(t *testing.T) {
@@ -47,7 +47,7 @@ func TestGetNodeStatus(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "get_node_status", map[string]any{"node": "pve1"})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {
@@ -75,7 +75,7 @@ func TestListNodeTasks(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "list_node_tasks", map[string]any{"node": "pve1", "limit": 10})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("rejects negative limit", func(t *testing.T) {
@@ -98,7 +98,7 @@ func TestGetNodeDisks(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "get_node_disks", map[string]any{"node": "pve1"})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {

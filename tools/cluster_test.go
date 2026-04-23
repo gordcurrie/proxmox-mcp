@@ -19,7 +19,7 @@ func TestListClusterResources(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "list_cluster_resources", nil)
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {
@@ -50,7 +50,7 @@ func TestGetTaskStatus(t *testing.T) {
 			"node": "pve1",
 			"upid": "UPID:pve1:000015E3:00000000:60F4B3A7:qmstart:100:root@pam:",
 		})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {
@@ -78,7 +78,7 @@ func TestGetClusterStatus(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "get_cluster_status", nil)
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {

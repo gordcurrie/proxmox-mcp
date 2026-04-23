@@ -17,7 +17,7 @@ func TestListClusterFirewallRules(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "list_cluster_firewall_rules", nil)
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {
@@ -45,7 +45,7 @@ func TestListVMFirewallRules(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "list_vm_firewall_rules", map[string]any{"node": "pve1", "vmid": 100})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {

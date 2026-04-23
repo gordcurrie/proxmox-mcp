@@ -19,7 +19,7 @@ func TestListVMs(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "list_vms", map[string]any{"node": "pve1"})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {
@@ -47,7 +47,7 @@ func TestGetVMStatus(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "get_vm_status", map[string]any{"node": "pve1", "vmid": 100})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {
@@ -76,7 +76,7 @@ func TestStartVM(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "start_vm", map[string]any{"node": "pve1", "vmid": 100})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {
@@ -104,7 +104,7 @@ func TestGetVMConfig(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "get_vm_config", map[string]any{"node": "pve1", "vmid": 100})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {

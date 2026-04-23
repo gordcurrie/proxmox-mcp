@@ -19,7 +19,7 @@ func TestListPools(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "list_pools", nil)
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {
@@ -47,7 +47,7 @@ func TestGetPool(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "get_pool", map[string]any{"poolid": "dev"})
-		assertSuccess(t, res)
+		assertResultJSON(t, res)
 	})
 
 	t.Run("propagates error", func(t *testing.T) {
@@ -70,7 +70,7 @@ func TestCreatePool(t *testing.T) {
 		defer cleanup()
 
 		res := callTool(t, cs, "create_pool", map[string]any{"poolid": "prod", "comment": "prod pool"})
-		assertSuccess(t, res)
+		assertSuccess(t, res) // create_pool returns textResult, not JSON
 	})
 
 	t.Run("propagates error", func(t *testing.T) {
