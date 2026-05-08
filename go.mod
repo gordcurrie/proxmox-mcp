@@ -1,6 +1,6 @@
 module github.com/gordcurrie/proxmox-mcp
 
-go 1.26.2
+go 1.26.3
 
 require github.com/modelcontextprotocol/go-sdk v1.4.1
 
