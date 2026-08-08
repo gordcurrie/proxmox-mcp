@@ -256,6 +256,82 @@ func TestGetNodeDisks_notFound(t *testing.T) {
 	}
 }
 
+func TestGetNodeJournal_success(t *testing.T) {
+	t.Parallel()
+
+	want := []string{
+		"Aug 07 11:30:38 pve1 sshd-session[26013]: Invalid user gcurrie from 192.168.1.209 port 55009",
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/nodes/pve1/journal" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, want))
+	}))
+	defer srv.Close()
+
+	got, err := newTestClient(t, srv.URL).GetNodeJournal(context.Background(), "pve1", 0, 0, 0)
+	if err != nil {
+		t.Fatalf("GetNodeJournal: %v", err)
+	}
+	if len(got) != 1 || got[0] != want[0] {
+		t.Errorf("got %+v, want %+v", got, want)
+	}
+}
+
+func TestGetNodeJournal_withParams(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/nodes/pve1/journal" {
+			http.NotFound(w, r)
+			return
+		}
+		q := r.URL.Query()
+		if q.Get("since") != "100" || q.Get("until") != "200" || q.Get("lastentries") != "50" {
+			http.Error(w, "missing query params: "+q.Encode(), http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, []string{}))
+	}))
+	defer srv.Close()
+
+	if _, err := newTestClient(t, srv.URL).GetNodeJournal(context.Background(), "pve1", 100, 200, 50); err != nil {
+		t.Fatalf("GetNodeJournal with params: %v", err)
+	}
+}
+
+func TestGetNodeJournal_negativeLastEntriesError(t *testing.T) {
+	t.Parallel()
+
+	// The error is returned before any HTTP call; the server is never contacted.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv.URL)
+	_, err := c.GetNodeJournal(context.Background(), "pve1", 0, 0, -1)
+	if err == nil {
+		t.Fatal("expected error for negative lastEntries, got nil")
+	}
+}
+
+func TestGetNodeJournal_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient(t, srv.URL).GetNodeJournal(context.Background(), "missing", 0, 0, 0)
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
 func TestNodeCommand_success(t *testing.T) {
 	t.Parallel()
 

@@ -62,6 +62,42 @@ func (c *Client) GetNodeDisks(ctx context.Context, node string) ([]map[string]an
 	return disks, nil
 }
 
+// GetNodeJournal returns raw systemd journal entries for a node — the same
+// data backing the Proxmox web UI's Syslog viewer. Useful for auditing
+// SSH/PAM authentication activity (grep client-side for "sshd",
+// "Failed password", "Invalid user", etc) or general troubleshooting.
+//
+// since and until are Unix timestamps; pass 0 to omit either bound.
+// lastEntries limits the result to the last N entries; pass 0 to use the
+// Proxmox API default. A negative lastEntries is an error.
+func (c *Client) GetNodeJournal(ctx context.Context, node string, since, until int64, lastEntries int) ([]string, error) {
+	if lastEntries < 0 {
+		return nil, fmt.Errorf("lastEntries must be >= 0, got %d", lastEntries)
+	}
+
+	q := url.Values{}
+	if since > 0 {
+		q.Set("since", strconv.FormatInt(since, 10))
+	}
+	if until > 0 {
+		q.Set("until", strconv.FormatInt(until, 10))
+	}
+	if lastEntries > 0 {
+		q.Set("lastentries", strconv.Itoa(lastEntries))
+	}
+
+	path := "/nodes/" + url.PathEscape(node) + "/journal"
+	if enc := q.Encode(); enc != "" {
+		path += "?" + enc
+	}
+
+	var lines []string
+	if err := c.get(ctx, path, &lines); err != nil {
+		return nil, fmt.Errorf("getting journal for node %s: %w", node, err)
+	}
+	return lines, nil
+}
+
 // NodeCommand sends a power management command to a node.
 // command must be "reboot" or "shutdown". The operation is irreversible and
 // takes down the entire node, so callers must validate before invoking this.

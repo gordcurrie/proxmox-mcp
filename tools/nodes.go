@@ -79,4 +79,25 @@ func registerNodeTools(s *mcp.Server, client proxmoxClient) {
 		}
 		return jsonResult(disks)
 	})
+
+	type getNodeJournalInput struct {
+		Node        string `json:"node"                    jsonschema:"name of the node"`
+		Since       int64  `json:"since,omitempty"         jsonschema:"only return entries at or after this Unix timestamp (0 = no lower bound)"`
+		Until       int64  `json:"until,omitempty"         jsonschema:"only return entries at or before this Unix timestamp (0 = no upper bound)"`
+		LastEntries int    `json:"last_entries,omitempty"  jsonschema:"limit to the last N entries (0 = Proxmox API default)"`
+	}
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_node_journal",
+		Description: "Get raw systemd journal entries for a Proxmox node — the same data behind the web UI's Syslog viewer. Useful for auditing SSH/PAM authentication activity (look for 'sshd', 'Failed password', 'Invalid user', etc) or general troubleshooting.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input getNodeJournalInput) (*mcp.CallToolResult, any, error) {
+		if input.LastEntries < 0 {
+			return errorResult(fmt.Errorf("get_node_journal: last_entries must be >= 0, got %d", input.LastEntries))
+		}
+		lines, err := client.GetNodeJournal(ctx, input.Node, input.Since, input.Until, input.LastEntries)
+		if err != nil {
+			return errorResult(fmt.Errorf("get_node_journal: %w", err))
+		}
+		return jsonResult(lines)
+	})
 }

@@ -114,3 +114,39 @@ func TestGetNodeDisks(t *testing.T) {
 		assertError(t, res, "disk enumeration failed")
 	})
 }
+
+func TestGetNodeJournal(t *testing.T) {
+	t.Run("returns journal lines as JSON", func(t *testing.T) {
+		mock := &mockProxmoxClient{
+			getNodeJournalFn: func(context.Context, string, int64, int64, int) ([]string, error) {
+				return []string{"Aug 07 11:30:38 pve1 sshd-session[26013]: Invalid user gcurrie"}, nil
+			},
+		}
+		cs, cleanup := connectTestServer(t, mock)
+		defer cleanup()
+
+		res := callTool(t, cs, "get_node_journal", map[string]any{"node": "pve1", "last_entries": 50})
+		assertResultJSON(t, res)
+	})
+
+	t.Run("rejects negative last_entries", func(t *testing.T) {
+		cs, cleanup := connectTestServer(t, &mockProxmoxClient{})
+		defer cleanup()
+
+		res := callTool(t, cs, "get_node_journal", map[string]any{"node": "pve1", "last_entries": -1})
+		assertError(t, res, "last_entries must be >= 0")
+	})
+
+	t.Run("propagates error", func(t *testing.T) {
+		mock := &mockProxmoxClient{
+			getNodeJournalFn: func(context.Context, string, int64, int64, int) ([]string, error) {
+				return nil, errors.New("journal unavailable")
+			},
+		}
+		cs, cleanup := connectTestServer(t, mock)
+		defer cleanup()
+
+		res := callTool(t, cs, "get_node_journal", map[string]any{"node": "pve1"})
+		assertError(t, res, "journal unavailable")
+	})
+}

@@ -16,6 +16,7 @@ type proxmoxClient interface {
 	ListNodeStorage(ctx context.Context, node string) ([]map[string]any, error)
 	ListNodeTasks(ctx context.Context, node string, limit int) ([]map[string]any, error)
 	GetNodeDisks(ctx context.Context, node string) ([]map[string]any, error)
+	GetNodeJournal(ctx context.Context, node string, since, until int64, lastEntries int) ([]string, error)
 	NodeCommand(ctx context.Context, node, command string) error
 
 	// VMs
@@ -110,4 +111,8 @@ type proxmoxClient interface {
 	CreatePool(ctx context.Context, req *proxmox.CreatePoolRequest) error
 	UpdatePool(ctx context.Context, poolid string, req *proxmox.UpdatePoolRequest) error
 	DeletePool(ctx context.Context, poolid string) error
+
+	// Access control
+	ListUsers(ctx context.Context) ([]map[string]any, error)
+	ListUserTokens(ctx context.Context, userid string) ([]map[string]any, error)
 }
