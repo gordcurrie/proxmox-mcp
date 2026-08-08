@@ -15,6 +15,7 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 | `list_node_storage` | Storage pools available on a node | `node` |
 | `list_node_tasks` | Recent tasks on a node | `node`, `limit` (optional) |
 | `get_node_disks` | Physical disks detected on a node | `node` |
+| `get_node_journal` | Raw systemd journal entries for a node (e.g. auditing SSH/PAM auth activity) | `node`, `since` (optional, Unix timestamp), `until` (optional, Unix timestamp), `last_entries` (optional) |
 
 ### QEMU VMs
 
@@ -125,6 +126,13 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 | `get_storage` | Get full configuration of a storage definition | `storage` (name) |
 | `add_storage` | Add a new storage target to the cluster | `storage` (name), `type` (required: `nfs`\|`pbs`\|`dir`\|`cifs`\|`zfspool`\|...), `server` (optional), `export` (optional, NFS path), `path` (optional, dir path), `datastore` (optional, PBS datastore), `username` (optional), `password` (optional), `fingerprint` (optional, PBS TLS fingerprint), `content` (optional, e.g. `backup,images`), `nodes` (optional, comma-sep), `shared` (optional bool) |
 | `update_storage` | Update an existing storage definition | `storage` (name), plus any of: `server`, `export`, `path`, `datastore`, `username`, `password`, `fingerprint`, `content`, `nodes`, `shared` |
+
+### Access Control
+
+| Tool | Description | Parameters |
+|---|---|---|
+| `list_users` | List all users across all realms (pve, pam, ldap, etc) — audit for unrecognized or orphaned accounts | — |
+| `list_user_tokens` | List API tokens issued to a user (metadata only, secrets are never returned) | `userid` (e.g. `root@pam`) |
 
 ### Destructive (opt-in)
 

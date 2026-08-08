@@ -16,6 +16,7 @@ type mockProxmoxClient struct {
 	listNodeStorageFn func(context.Context, string) ([]map[string]any, error)
 	listNodeTasksFn   func(context.Context, string, int) ([]map[string]any, error)
 	getNodeDisksFn    func(context.Context, string) ([]map[string]any, error)
+	getNodeJournalFn  func(context.Context, string, int64, int64, int) ([]string, error)
 	nodeCommandFn     func(context.Context, string, string) error
 
 	// VMs
@@ -110,6 +111,10 @@ type mockProxmoxClient struct {
 	createPoolFn func(context.Context, *proxmox.CreatePoolRequest) error
 	updatePoolFn func(context.Context, string, *proxmox.UpdatePoolRequest) error
 	deletePoolFn func(context.Context, string) error
+
+	// Access control
+	listUsersFn      func(context.Context) ([]map[string]any, error)
+	listUserTokensFn func(context.Context, string) ([]map[string]any, error)
 }
 
 // Nodes
@@ -145,6 +150,13 @@ func (m *mockProxmoxClient) ListNodeTasks(ctx context.Context, node string, limi
 func (m *mockProxmoxClient) GetNodeDisks(ctx context.Context, node string) ([]map[string]any, error) {
 	if m.getNodeDisksFn != nil {
 		return m.getNodeDisksFn(ctx, node)
+	}
+	return nil, nil
+}
+
+func (m *mockProxmoxClient) GetNodeJournal(ctx context.Context, node string, since, until int64, lastEntries int) ([]string, error) {
+	if m.getNodeJournalFn != nil {
+		return m.getNodeJournalFn(ctx, node, since, until, lastEntries)
 	}
 	return nil, nil
 }
@@ -685,4 +697,20 @@ func (m *mockProxmoxClient) DeletePool(ctx context.Context, poolid string) error
 		return m.deletePoolFn(ctx, poolid)
 	}
 	return nil
+}
+
+// Access control
+
+func (m *mockProxmoxClient) ListUsers(ctx context.Context) ([]map[string]any, error) {
+	if m.listUsersFn != nil {
+		return m.listUsersFn(ctx)
+	}
+	return nil, nil
+}
+
+func (m *mockProxmoxClient) ListUserTokens(ctx context.Context, userid string) ([]map[string]any, error) {
+	if m.listUserTokensFn != nil {
+		return m.listUserTokensFn(ctx, userid)
+	}
+	return nil, nil
 }
