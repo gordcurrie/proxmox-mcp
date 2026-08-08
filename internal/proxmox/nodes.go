@@ -71,6 +71,15 @@ func (c *Client) GetNodeDisks(ctx context.Context, node string) ([]map[string]an
 // lastEntries limits the result to the last N entries; pass 0 to use the
 // Proxmox API default. A negative lastEntries is an error.
 func (c *Client) GetNodeJournal(ctx context.Context, node string, since, until int64, lastEntries int) ([]string, error) {
+	if since < 0 {
+		return nil, fmt.Errorf("since must be >= 0, got %d", since)
+	}
+	if until < 0 {
+		return nil, fmt.Errorf("until must be >= 0, got %d", until)
+	}
+	if since > 0 && until > 0 && since > until {
+		return nil, fmt.Errorf("since (%d) must be <= until (%d)", since, until)
+	}
 	if lastEntries < 0 {
 		return nil, fmt.Errorf("lastEntries must be >= 0, got %d", lastEntries)
 	}

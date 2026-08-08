@@ -15,6 +15,7 @@ linting via `golangci-lint`/`gosec`/`govulncheck`.
 | 8 — Network Write Operations | ✅ Complete — 80 tools (PR #25) |
 | Token optimisation | ✅ Complete — compact JSON responses, selective `omitempty` (PR #29) |
 | Quality Parity with unifi-mcp | ✅ Complete — hardening, CI workflows, interface + tests (PR #32) |
+| Access Control & Audit Tools | ✅ Complete — 83 tools: `list_users`, `list_user_tokens`, `get_node_journal` (PR #34) |
 
 ## Decisions
 

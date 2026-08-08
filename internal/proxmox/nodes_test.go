@@ -260,7 +260,7 @@ func TestGetNodeJournal_success(t *testing.T) {
 	t.Parallel()
 
 	want := []string{
-		"Aug 07 11:30:38 pve1 sshd-session[26013]: Invalid user gcurrie from 192.168.1.209 port 55009",
+		"Aug 07 11:30:38 pve1 sshd-session[26013]: Invalid user testuser from 192.0.2.10 port 55009",
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/nodes/pve1/journal" {
@@ -315,6 +315,45 @@ func TestGetNodeJournal_negativeLastEntriesError(t *testing.T) {
 	_, err := c.GetNodeJournal(context.Background(), "pve1", 0, 0, -1)
 	if err == nil {
 		t.Fatal("expected error for negative lastEntries, got nil")
+	}
+}
+
+func TestGetNodeJournal_negativeSinceError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv.URL)
+	_, err := c.GetNodeJournal(context.Background(), "pve1", -1, 0, 0)
+	if err == nil {
+		t.Fatal("expected error for negative since, got nil")
+	}
+}
+
+func TestGetNodeJournal_negativeUntilError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv.URL)
+	_, err := c.GetNodeJournal(context.Background(), "pve1", 0, -1, 0)
+	if err == nil {
+		t.Fatal("expected error for negative until, got nil")
+	}
+}
+
+func TestGetNodeJournal_sinceAfterUntilError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv.URL)
+	_, err := c.GetNodeJournal(context.Background(), "pve1", 200, 100, 0)
+	if err == nil {
+		t.Fatal("expected error for since > until, got nil")
 	}
 }
 

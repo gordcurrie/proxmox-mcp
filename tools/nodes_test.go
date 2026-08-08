@@ -119,7 +119,7 @@ func TestGetNodeJournal(t *testing.T) {
 	t.Run("returns journal lines as JSON", func(t *testing.T) {
 		mock := &mockProxmoxClient{
 			getNodeJournalFn: func(context.Context, string, int64, int64, int) ([]string, error) {
-				return []string{"Aug 07 11:30:38 pve1 sshd-session[26013]: Invalid user gcurrie"}, nil
+				return []string{"Aug 07 11:30:38 pve1 sshd-session[26013]: Invalid user testuser"}, nil
 			},
 		}
 		cs, cleanup := connectTestServer(t, mock)
@@ -135,6 +135,30 @@ func TestGetNodeJournal(t *testing.T) {
 
 		res := callTool(t, cs, "get_node_journal", map[string]any{"node": "pve1", "last_entries": -1})
 		assertError(t, res, "last_entries must be >= 0")
+	})
+
+	t.Run("rejects negative since", func(t *testing.T) {
+		cs, cleanup := connectTestServer(t, &mockProxmoxClient{})
+		defer cleanup()
+
+		res := callTool(t, cs, "get_node_journal", map[string]any{"node": "pve1", "since": -1})
+		assertError(t, res, "since must be >= 0")
+	})
+
+	t.Run("rejects negative until", func(t *testing.T) {
+		cs, cleanup := connectTestServer(t, &mockProxmoxClient{})
+		defer cleanup()
+
+		res := callTool(t, cs, "get_node_journal", map[string]any{"node": "pve1", "until": -1})
+		assertError(t, res, "until must be >= 0")
+	})
+
+	t.Run("rejects since after until", func(t *testing.T) {
+		cs, cleanup := connectTestServer(t, &mockProxmoxClient{})
+		defer cleanup()
+
+		res := callTool(t, cs, "get_node_journal", map[string]any{"node": "pve1", "since": 200, "until": 100})
+		assertError(t, res, "must be <= until")
 	})
 
 	t.Run("propagates error", func(t *testing.T) {

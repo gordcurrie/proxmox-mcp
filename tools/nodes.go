@@ -91,6 +91,15 @@ func registerNodeTools(s *mcp.Server, client proxmoxClient) {
 		Description: "Get raw systemd journal entries for a Proxmox node — the same data behind the web UI's Syslog viewer. Useful for auditing SSH/PAM authentication activity (look for 'sshd', 'Failed password', 'Invalid user', etc) or general troubleshooting.",
 		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input getNodeJournalInput) (*mcp.CallToolResult, any, error) {
+		if input.Since < 0 {
+			return errorResult(fmt.Errorf("get_node_journal: since must be >= 0, got %d", input.Since))
+		}
+		if input.Until < 0 {
+			return errorResult(fmt.Errorf("get_node_journal: until must be >= 0, got %d", input.Until))
+		}
+		if input.Since > 0 && input.Until > 0 && input.Since > input.Until {
+			return errorResult(fmt.Errorf("get_node_journal: since (%d) must be <= until (%d)", input.Since, input.Until))
+		}
 		if input.LastEntries < 0 {
 			return errorResult(fmt.Errorf("get_node_journal: last_entries must be >= 0, got %d", input.LastEntries))
 		}
