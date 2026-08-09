@@ -62,6 +62,39 @@ func (c *Client) GetNodeDisks(ctx context.Context, node string) ([]map[string]an
 	return disks, nil
 }
 
+// GetDiskSMART returns SMART health data for a single disk on a node, as
+// reported by `smartctl` via the Proxmox API. disk must be the device path
+// (e.g. "/dev/sda") as returned by GetNodeDisks.
+func (c *Client) GetDiskSMART(ctx context.Context, node, disk string) (map[string]any, error) {
+	var smart map[string]any
+	q := url.Values{}
+	q.Set("disk", disk)
+	path := "/nodes/" + url.PathEscape(node) + "/disks/smart?" + q.Encode()
+	if err := c.get(ctx, path, &smart); err != nil {
+		return nil, fmt.Errorf("getting SMART data for disk %s on node %s: %w", disk, node, err)
+	}
+	return smart, nil
+}
+
+// ListZFSPools returns all ZFS pools on a node, including health status.
+func (c *Client) ListZFSPools(ctx context.Context, node string) ([]map[string]any, error) {
+	var pools []map[string]any
+	if err := c.get(ctx, "/nodes/"+url.PathEscape(node)+"/disks/zfs", &pools); err != nil {
+		return nil, fmt.Errorf("listing ZFS pools on node %s: %w", node, err)
+	}
+	return pools, nil
+}
+
+// GetZFSPool returns detailed status for a single ZFS pool on a node,
+// including per-device health (the equivalent of `zpool status -v`).
+func (c *Client) GetZFSPool(ctx context.Context, node, name string) (map[string]any, error) {
+	var pool map[string]any
+	if err := c.get(ctx, "/nodes/"+url.PathEscape(node)+"/disks/zfs/"+url.PathEscape(name), &pool); err != nil {
+		return nil, fmt.Errorf("getting ZFS pool %s on node %s: %w", name, node, err)
+	}
+	return pool, nil
+}
+
 // GetNodeJournal returns raw systemd journal entries for a node — the same
 // data backing the Proxmox web UI's Syslog viewer. Useful for auditing
 // SSH/PAM authentication activity (grep client-side for "sshd",

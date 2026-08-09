@@ -256,6 +256,119 @@ func TestGetNodeDisks_notFound(t *testing.T) {
 	}
 }
 
+func TestGetDiskSMART_success(t *testing.T) {
+	t.Parallel()
+
+	want := map[string]any{"health": "PASSED", "type": "ata"}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/nodes/pve1/disks/smart" || r.URL.Query().Get("disk") != "/dev/sda" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, want))
+	}))
+	defer srv.Close()
+
+	got, err := newTestClient(t, srv.URL).GetDiskSMART(context.Background(), "pve1", "/dev/sda")
+	if err != nil {
+		t.Fatalf("GetDiskSMART: %v", err)
+	}
+	if got["health"] != "PASSED" {
+		t.Errorf("health: got %v, want PASSED", got["health"])
+	}
+}
+
+func TestGetDiskSMART_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient(t, srv.URL).GetDiskSMART(context.Background(), "pve1", "/dev/missing")
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestListZFSPools_success(t *testing.T) {
+	t.Parallel()
+
+	want := []map[string]any{
+		{"name": "Storage", "health": "DEGRADED", "size": float64(1000204886016)},
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/nodes/pve2/disks/zfs" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, want))
+	}))
+	defer srv.Close()
+
+	got, err := newTestClient(t, srv.URL).ListZFSPools(context.Background(), "pve2")
+	if err != nil {
+		t.Fatalf("ListZFSPools: %v", err)
+	}
+	if len(got) != 1 || got[0]["name"] != "Storage" {
+		t.Errorf("got %+v, want 1 pool named Storage", got)
+	}
+}
+
+func TestListZFSPools_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient(t, srv.URL).ListZFSPools(context.Background(), "missing")
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestGetZFSPool_success(t *testing.T) {
+	t.Parallel()
+
+	want := map[string]any{"name": "Storage", "state": "DEGRADED"}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/nodes/pve2/disks/zfs/Storage" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, want))
+	}))
+	defer srv.Close()
+
+	got, err := newTestClient(t, srv.URL).GetZFSPool(context.Background(), "pve2", "Storage")
+	if err != nil {
+		t.Fatalf("GetZFSPool: %v", err)
+	}
+	if got["state"] != "DEGRADED" {
+		t.Errorf("state: got %v, want DEGRADED", got["state"])
+	}
+}
+
+func TestGetZFSPool_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient(t, srv.URL).GetZFSPool(context.Background(), "pve2", "NoSuchPool")
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
 func TestGetNodeJournal_success(t *testing.T) {
 	t.Parallel()
 

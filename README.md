@@ -15,6 +15,9 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 | `list_node_storage` | Storage pools available on a node | `node` |
 | `list_node_tasks` | Recent tasks on a node | `node`, `limit` (optional) |
 | `get_node_disks` | Physical disks detected on a node | `node` |
+| `get_disk_smart` | SMART health data for a single disk (attributes, health, error counters) | `node`, `disk` (device path, e.g. `/dev/sda`) |
+| `list_zfs_pools` | List all ZFS pools on a node with health status | `node` |
+| `get_zfs_pool` | Detailed ZFS pool status including per-device health (like `zpool status -v`) | `node`, `name` (pool name) |
 | `get_node_journal` | Raw systemd journal entries for a node (e.g. auditing SSH/PAM auth activity) | `node`, `since` (optional, Unix timestamp), `until` (optional, Unix timestamp), `last_entries` (optional) |
 
 ### QEMU VMs
