@@ -16,6 +16,7 @@ linting via `golangci-lint`/`gosec`/`govulncheck`.
 | Token optimisation | ✅ Complete — compact JSON responses, selective `omitempty` (PR #29) |
 | Quality Parity with unifi-mcp | ✅ Complete — hardening, CI workflows, interface + tests (PR #32) |
 | Access Control & Audit Tools | ✅ Complete — 83 tools: `list_users`, `list_user_tokens`, `get_node_journal` (PR #34) |
+| Disk Health Tools | ✅ Complete — 86 tools: `get_disk_smart`, `list_zfs_pools`, `get_zfs_pool` (PR #35) |
 
 ## Decisions
 

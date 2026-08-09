@@ -16,6 +16,9 @@ type proxmoxClient interface {
 	ListNodeStorage(ctx context.Context, node string) ([]map[string]any, error)
 	ListNodeTasks(ctx context.Context, node string, limit int) ([]map[string]any, error)
 	GetNodeDisks(ctx context.Context, node string) ([]map[string]any, error)
+	GetDiskSMART(ctx context.Context, node, disk string) (map[string]any, error)
+	ListZFSPools(ctx context.Context, node string) ([]map[string]any, error)
+	GetZFSPool(ctx context.Context, node, name string) (map[string]any, error)
 	GetNodeJournal(ctx context.Context, node string, since, until int64, lastEntries int) ([]string, error)
 	NodeCommand(ctx context.Context, node, command string) error
 

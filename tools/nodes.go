@@ -80,6 +80,50 @@ func registerNodeTools(s *mcp.Server, client proxmoxClient) {
 		return jsonResult(disks)
 	})
 
+	type getDiskSMARTInput struct {
+		Node string `json:"node" jsonschema:"name of the node"`
+		Disk string `json:"disk" jsonschema:"device path of the disk, e.g. /dev/sda (as returned by get_node_disks)"`
+	}
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_disk_smart",
+		Description: "Get SMART health data for a single disk on a node (attributes, health status, error counters).",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input getDiskSMARTInput) (*mcp.CallToolResult, any, error) {
+		smart, err := client.GetDiskSMART(ctx, input.Node, input.Disk)
+		if err != nil {
+			return errorResult(fmt.Errorf("get_disk_smart: %w", err))
+		}
+		return jsonResult(smart)
+	})
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "list_zfs_pools",
+		Description: "List all ZFS pools on a node, including health status.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input nodeInput) (*mcp.CallToolResult, any, error) {
+		pools, err := client.ListZFSPools(ctx, input.Node)
+		if err != nil {
+			return errorResult(fmt.Errorf("list_zfs_pools: %w", err))
+		}
+		return jsonResult(pools)
+	})
+
+	type getZFSPoolInput struct {
+		Node string `json:"node" jsonschema:"name of the node"`
+		Name string `json:"name" jsonschema:"name of the ZFS pool, e.g. Storage"`
+	}
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_zfs_pool",
+		Description: "Get detailed status for a single ZFS pool on a node, including per-device health — the equivalent of 'zpool status -v'.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input getZFSPoolInput) (*mcp.CallToolResult, any, error) {
+		pool, err := client.GetZFSPool(ctx, input.Node, input.Name)
+		if err != nil {
+			return errorResult(fmt.Errorf("get_zfs_pool: %w", err))
+		}
+		return jsonResult(pool)
+	})
+
 	type getNodeJournalInput struct {
 		Node        string `json:"node"                    jsonschema:"name of the node"`
 		Since       int64  `json:"since,omitempty"         jsonschema:"only return entries at or after this Unix timestamp (0 = no lower bound)"`

@@ -115,6 +115,90 @@ func TestGetNodeDisks(t *testing.T) {
 	})
 }
 
+func TestGetDiskSMART(t *testing.T) {
+	t.Run("returns SMART data as JSON", func(t *testing.T) {
+		mock := &mockProxmoxClient{
+			getDiskSMARTFn: func(context.Context, string, string) (map[string]any, error) {
+				return map[string]any{"health": "PASSED"}, nil
+			},
+		}
+		cs, cleanup := connectTestServer(t, mock)
+		defer cleanup()
+
+		res := callTool(t, cs, "get_disk_smart", map[string]any{"node": "pve1", "disk": "/dev/sda"})
+		assertResultJSON(t, res)
+	})
+
+	t.Run("propagates error", func(t *testing.T) {
+		mock := &mockProxmoxClient{
+			getDiskSMARTFn: func(context.Context, string, string) (map[string]any, error) {
+				return nil, errors.New("disk not found")
+			},
+		}
+		cs, cleanup := connectTestServer(t, mock)
+		defer cleanup()
+
+		res := callTool(t, cs, "get_disk_smart", map[string]any{"node": "pve1", "disk": "/dev/missing"})
+		assertError(t, res, "disk not found")
+	})
+}
+
+func TestListZFSPools(t *testing.T) {
+	t.Run("returns pools as JSON", func(t *testing.T) {
+		mock := &mockProxmoxClient{
+			listZFSPoolsFn: func(context.Context, string) ([]map[string]any, error) {
+				return []map[string]any{{"name": "Storage", "health": "ONLINE"}}, nil
+			},
+		}
+		cs, cleanup := connectTestServer(t, mock)
+		defer cleanup()
+
+		res := callTool(t, cs, "list_zfs_pools", map[string]any{"node": "pve1"})
+		assertResultJSON(t, res)
+	})
+
+	t.Run("propagates error", func(t *testing.T) {
+		mock := &mockProxmoxClient{
+			listZFSPoolsFn: func(context.Context, string) ([]map[string]any, error) {
+				return nil, errors.New("API error")
+			},
+		}
+		cs, cleanup := connectTestServer(t, mock)
+		defer cleanup()
+
+		res := callTool(t, cs, "list_zfs_pools", map[string]any{"node": "pve1"})
+		assertError(t, res, "API error")
+	})
+}
+
+func TestGetZFSPool(t *testing.T) {
+	t.Run("returns pool as JSON", func(t *testing.T) {
+		mock := &mockProxmoxClient{
+			getZFSPoolFn: func(_ context.Context, _, name string) (map[string]any, error) {
+				return map[string]any{"name": name, "state": "DEGRADED"}, nil
+			},
+		}
+		cs, cleanup := connectTestServer(t, mock)
+		defer cleanup()
+
+		res := callTool(t, cs, "get_zfs_pool", map[string]any{"node": "pve2", "name": "Storage"})
+		assertResultJSON(t, res)
+	})
+
+	t.Run("propagates error", func(t *testing.T) {
+		mock := &mockProxmoxClient{
+			getZFSPoolFn: func(context.Context, string, string) (map[string]any, error) {
+				return nil, errors.New("pool not found")
+			},
+		}
+		cs, cleanup := connectTestServer(t, mock)
+		defer cleanup()
+
+		res := callTool(t, cs, "get_zfs_pool", map[string]any{"node": "pve2", "name": "NoSuch"})
+		assertError(t, res, "pool not found")
+	})
+}
+
 func TestGetNodeJournal(t *testing.T) {
 	t.Run("returns journal lines as JSON", func(t *testing.T) {
 		mock := &mockProxmoxClient{

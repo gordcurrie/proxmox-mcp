@@ -16,6 +16,9 @@ type mockProxmoxClient struct {
 	listNodeStorageFn func(context.Context, string) ([]map[string]any, error)
 	listNodeTasksFn   func(context.Context, string, int) ([]map[string]any, error)
 	getNodeDisksFn    func(context.Context, string) ([]map[string]any, error)
+	getDiskSMARTFn    func(context.Context, string, string) (map[string]any, error)
+	listZFSPoolsFn    func(context.Context, string) ([]map[string]any, error)
+	getZFSPoolFn      func(context.Context, string, string) (map[string]any, error)
 	getNodeJournalFn  func(context.Context, string, int64, int64, int) ([]string, error)
 	nodeCommandFn     func(context.Context, string, string) error
 
@@ -150,6 +153,27 @@ func (m *mockProxmoxClient) ListNodeTasks(ctx context.Context, node string, limi
 func (m *mockProxmoxClient) GetNodeDisks(ctx context.Context, node string) ([]map[string]any, error) {
 	if m.getNodeDisksFn != nil {
 		return m.getNodeDisksFn(ctx, node)
+	}
+	return nil, nil
+}
+
+func (m *mockProxmoxClient) GetDiskSMART(ctx context.Context, node, disk string) (map[string]any, error) {
+	if m.getDiskSMARTFn != nil {
+		return m.getDiskSMARTFn(ctx, node, disk)
+	}
+	return nil, nil
+}
+
+func (m *mockProxmoxClient) ListZFSPools(ctx context.Context, node string) ([]map[string]any, error) {
+	if m.listZFSPoolsFn != nil {
+		return m.listZFSPoolsFn(ctx, node)
+	}
+	return nil, nil
+}
+
+func (m *mockProxmoxClient) GetZFSPool(ctx context.Context, node, name string) (map[string]any, error) {
+	if m.getZFSPoolFn != nil {
+		return m.getZFSPoolFn(ctx, node, name)
 	}
 	return nil, nil
 }
