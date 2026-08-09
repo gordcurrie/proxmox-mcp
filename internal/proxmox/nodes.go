@@ -67,7 +67,9 @@ func (c *Client) GetNodeDisks(ctx context.Context, node string) ([]map[string]an
 // (e.g. "/dev/sda") as returned by GetNodeDisks.
 func (c *Client) GetDiskSMART(ctx context.Context, node, disk string) (map[string]any, error) {
 	var smart map[string]any
-	path := "/nodes/" + url.PathEscape(node) + "/disks/smart?disk=" + url.QueryEscape(disk)
+	q := url.Values{}
+	q.Set("disk", disk)
+	path := "/nodes/" + url.PathEscape(node) + "/disks/smart?" + q.Encode()
 	if err := c.get(ctx, path, &smart); err != nil {
 		return nil, fmt.Errorf("getting SMART data for disk %s on node %s: %w", disk, node, err)
 	}
