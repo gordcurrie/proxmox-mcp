@@ -17,6 +17,7 @@ linting via `golangci-lint`/`gosec`/`govulncheck`.
 | Quality Parity with unifi-mcp | ✅ Complete — hardening, CI workflows, interface + tests (PR #32) |
 | Access Control & Audit Tools | ✅ Complete — 83 tools: `list_users`, `list_user_tokens`, `get_node_journal` (PR #34) |
 | Disk Health Tools | ✅ Complete — 86 tools: `get_disk_smart`, `list_zfs_pools`, `get_zfs_pool` (PR #35) |
+| HA & Cluster Config Tools | ✅ Complete — 90 tools: `list_ha_groups`, `list_ha_resources`, `get_ha_status`, `list_cluster_config_nodes` (PR #36) |
 
 ## Decisions
 

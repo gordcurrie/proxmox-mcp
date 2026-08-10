@@ -94,3 +94,115 @@ func TestGetClusterStatus(t *testing.T) {
 		assertError(t, res, "quorum lost")
 	})
 }
+
+func TestListHAGroups(t *testing.T) {
+	t.Run("returns groups as JSON", func(t *testing.T) {
+		mock := &mockProxmoxClient{
+			listHAGroupsFn: func(context.Context) ([]map[string]any, error) {
+				return []map[string]any{{"group": "no-pve3"}}, nil
+			},
+		}
+		cs, cleanup := connectTestServer(t, mock)
+		defer cleanup()
+
+		res := callTool(t, cs, "list_ha_groups", nil)
+		assertResultJSON(t, res)
+	})
+
+	t.Run("propagates error", func(t *testing.T) {
+		mock := &mockProxmoxClient{
+			listHAGroupsFn: func(context.Context) ([]map[string]any, error) {
+				return nil, errors.New("API error")
+			},
+		}
+		cs, cleanup := connectTestServer(t, mock)
+		defer cleanup()
+
+		res := callTool(t, cs, "list_ha_groups", nil)
+		assertError(t, res, "API error")
+	})
+}
+
+func TestListHAResources(t *testing.T) {
+	t.Run("returns resources as JSON", func(t *testing.T) {
+		mock := &mockProxmoxClient{
+			listHAResourcesFn: func(context.Context) ([]map[string]any, error) {
+				return []map[string]any{{"sid": "ct:104", "state": "started"}}, nil
+			},
+		}
+		cs, cleanup := connectTestServer(t, mock)
+		defer cleanup()
+
+		res := callTool(t, cs, "list_ha_resources", nil)
+		assertResultJSON(t, res)
+	})
+
+	t.Run("propagates error", func(t *testing.T) {
+		mock := &mockProxmoxClient{
+			listHAResourcesFn: func(context.Context) ([]map[string]any, error) {
+				return nil, errors.New("API error")
+			},
+		}
+		cs, cleanup := connectTestServer(t, mock)
+		defer cleanup()
+
+		res := callTool(t, cs, "list_ha_resources", nil)
+		assertError(t, res, "API error")
+	})
+}
+
+func TestGetHAStatus(t *testing.T) {
+	t.Run("returns status as JSON", func(t *testing.T) {
+		mock := &mockProxmoxClient{
+			getHAStatusFn: func(context.Context) ([]map[string]any, error) {
+				return []map[string]any{{"type": "quorum", "status": "OK"}}, nil
+			},
+		}
+		cs, cleanup := connectTestServer(t, mock)
+		defer cleanup()
+
+		res := callTool(t, cs, "get_ha_status", nil)
+		assertResultJSON(t, res)
+	})
+
+	t.Run("propagates error", func(t *testing.T) {
+		mock := &mockProxmoxClient{
+			getHAStatusFn: func(context.Context) ([]map[string]any, error) {
+				return nil, errors.New("HA manager unreachable")
+			},
+		}
+		cs, cleanup := connectTestServer(t, mock)
+		defer cleanup()
+
+		res := callTool(t, cs, "get_ha_status", nil)
+		assertError(t, res, "HA manager unreachable")
+	})
+}
+
+func TestListClusterConfigNodes(t *testing.T) {
+	t.Run("returns nodes as JSON", func(t *testing.T) {
+		mock := &mockProxmoxClient{
+			listClusterConfigNodesFn: func(context.Context) ([]map[string]any, error) {
+				return []map[string]any{{"name": "pve1", "nodeid": 1}}, nil
+			},
+		}
+		cs, cleanup := connectTestServer(t, mock)
+		defer cleanup()
+
+		res := callTool(t, cs, "list_cluster_config_nodes", nil)
+		assertResultJSON(t, res)
+	})
+
+	t.Run("propagates error", func(t *testing.T) {
+		mock := &mockProxmoxClient{
+			listClusterConfigNodesFn: func(context.Context) ([]map[string]any, error) {
+				return nil, errors.New("API error")
+			},
+		}
+		cs, cleanup := connectTestServer(t, mock)
+		defer cleanup()
+
+		res := callTool(t, cs, "list_cluster_config_nodes", nil)
+		assertError(t, res, "API error")
+	})
+}
