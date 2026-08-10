@@ -135,10 +135,10 @@ func TestListHAGroups_success(t *testing.T) {
 	t.Parallel()
 
 	want := []map[string]any{
-		{"group": "no-pve3", "nodes": "pve1,pve2,pve4"},
+		{"rule": "no-pve3", "type": "node-affinity", "nodes": "pve1,pve2,pve4"},
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/cluster/ha/groups" {
+		if r.URL.Path != "/cluster/ha/rules" {
 			http.NotFound(w, r)
 			return
 		}
@@ -151,8 +151,8 @@ func TestListHAGroups_success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListHAGroups: %v", err)
 	}
-	if len(got) != 1 || got[0]["group"] != "no-pve3" {
-		t.Errorf("got %+v, want 1 group named no-pve3", got)
+	if len(got) != 1 || got[0]["rule"] != "no-pve3" {
+		t.Errorf("got %+v, want 1 rule named no-pve3", got)
 	}
 }
 

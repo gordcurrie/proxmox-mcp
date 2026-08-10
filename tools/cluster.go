@@ -57,7 +57,7 @@ func registerClusterTools(s *mcp.Server, client proxmoxClient) {
 
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "list_ha_groups",
-		Description: "List all HA (High Availability) groups defined in the cluster.",
+		Description: "List all HA (High Availability) node-affinity rules defined in the cluster — the modern replacement for the legacy HA groups concept.",
 		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ listHAGroupsInput) (*mcp.CallToolResult, any, error) {
 		groups, err := client.ListHAGroups(ctx)

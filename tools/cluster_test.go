@@ -99,7 +99,7 @@ func TestListHAGroups(t *testing.T) {
 	t.Run("returns groups as JSON", func(t *testing.T) {
 		mock := &mockProxmoxClient{
 			listHAGroupsFn: func(context.Context) ([]map[string]any, error) {
-				return []map[string]any{{"group": "no-pve3"}}, nil
+				return []map[string]any{{"rule": "no-pve3", "type": "node-affinity"}}, nil
 			},
 		}
 		cs, cleanup := connectTestServer(t, mock)

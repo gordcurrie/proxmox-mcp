@@ -32,13 +32,17 @@ func (c *Client) GetClusterStatus(ctx context.Context) ([]map[string]any, error)
 	return status, nil
 }
 
-// ListHAGroups returns all HA (High Availability) groups defined in the cluster.
+// ListHAGroups returns all HA (High Availability) node-affinity rules
+// defined in the cluster — the modern replacement for the legacy HA groups
+// concept. PVE versions that have migrated groups to rules return a 500 from
+// the old /cluster/ha/groups endpoint ("ha groups have been migrated to
+// rules"), so this queries /cluster/ha/rules instead.
 func (c *Client) ListHAGroups(ctx context.Context) ([]map[string]any, error) {
-	var groups []map[string]any
-	if err := c.get(ctx, "/cluster/ha/groups", &groups); err != nil {
+	var rules []map[string]any
+	if err := c.get(ctx, "/cluster/ha/rules", &rules); err != nil {
 		return nil, fmt.Errorf("listing HA groups: %w", err)
 	}
-	return groups, nil
+	return rules, nil
 }
 
 // ListHAResources returns all HA-managed resources (VMs and containers) in the cluster.
