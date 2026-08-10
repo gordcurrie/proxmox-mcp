@@ -58,9 +58,13 @@ type mockProxmoxClient struct {
 	deleteContainerFn     func(context.Context, string, int, bool) (string, error)
 
 	// Cluster
-	listClusterResourcesFn func(context.Context, string) ([]proxmox.ClusterResource, error)
-	getTaskStatusFn        func(context.Context, string, string) (*proxmox.TaskStatus, error)
-	getClusterStatusFn     func(context.Context) ([]map[string]any, error)
+	listClusterResourcesFn   func(context.Context, string) ([]proxmox.ClusterResource, error)
+	getTaskStatusFn          func(context.Context, string, string) (*proxmox.TaskStatus, error)
+	getClusterStatusFn       func(context.Context) ([]map[string]any, error)
+	listHAGroupsFn           func(context.Context) ([]map[string]any, error)
+	listHAResourcesFn        func(context.Context) ([]map[string]any, error)
+	getHAStatusFn            func(context.Context) ([]map[string]any, error)
+	listClusterConfigNodesFn func(context.Context) ([]map[string]any, error)
 
 	// Snapshots
 	listVMSnapshotsFn           func(context.Context, string, int) ([]proxmox.Snapshot, error)
@@ -432,6 +436,34 @@ func (m *mockProxmoxClient) GetTaskStatus(ctx context.Context, node, upid string
 func (m *mockProxmoxClient) GetClusterStatus(ctx context.Context) ([]map[string]any, error) {
 	if m.getClusterStatusFn != nil {
 		return m.getClusterStatusFn(ctx)
+	}
+	return nil, nil
+}
+
+func (m *mockProxmoxClient) ListHAGroups(ctx context.Context) ([]map[string]any, error) {
+	if m.listHAGroupsFn != nil {
+		return m.listHAGroupsFn(ctx)
+	}
+	return nil, nil
+}
+
+func (m *mockProxmoxClient) ListHAResources(ctx context.Context) ([]map[string]any, error) {
+	if m.listHAResourcesFn != nil {
+		return m.listHAResourcesFn(ctx)
+	}
+	return nil, nil
+}
+
+func (m *mockProxmoxClient) GetHAStatus(ctx context.Context) ([]map[string]any, error) {
+	if m.getHAStatusFn != nil {
+		return m.getHAStatusFn(ctx)
+	}
+	return nil, nil
+}
+
+func (m *mockProxmoxClient) ListClusterConfigNodes(ctx context.Context) ([]map[string]any, error) {
+	if m.listClusterConfigNodesFn != nil {
+		return m.listClusterConfigNodesFn(ctx)
 	}
 	return nil, nil
 }

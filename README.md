@@ -12,6 +12,10 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 | `get_node_status` | Detailed status of a node | `node` |
 | `list_cluster_resources` | All resources across the cluster | `type` (optional: `vm`, `storage`, `node`, `sdn`) |
 | `get_cluster_status` | Cluster status and quorum information | — |
+| `list_ha_groups` | List all HA node-affinity rules (the modern replacement for legacy HA groups) | — |
+| `list_ha_resources` | List all HA-managed resources (VMs and containers) | — |
+| `get_ha_status` | Current HA manager status, including quorum and per-node/per-resource state | — |
+| `list_cluster_config_nodes` | Corosync nodelist (node names, IDs, ring addresses) | — |
 | `list_node_storage` | Storage pools available on a node | `node` |
 | `list_node_tasks` | Recent tasks on a node | `node`, `limit` (optional) |
 | `get_node_disks` | Physical disks detected on a node | `node` |

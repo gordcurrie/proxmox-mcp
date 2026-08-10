@@ -52,4 +52,60 @@ func registerClusterTools(s *mcp.Server, client proxmoxClient) {
 		}
 		return jsonResult(status)
 	})
+
+	type listHAGroupsInput struct{}
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "list_ha_groups",
+		Description: "List all HA (High Availability) node-affinity rules defined in the cluster — the modern replacement for the legacy HA groups concept.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ listHAGroupsInput) (*mcp.CallToolResult, any, error) {
+		groups, err := client.ListHAGroups(ctx)
+		if err != nil {
+			return errorResult(fmt.Errorf("list_ha_groups: %w", err))
+		}
+		return jsonResult(groups)
+	})
+
+	type listHAResourcesInput struct{}
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "list_ha_resources",
+		Description: "List all HA-managed resources (VMs and containers) in the cluster.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ listHAResourcesInput) (*mcp.CallToolResult, any, error) {
+		resources, err := client.ListHAResources(ctx)
+		if err != nil {
+			return errorResult(fmt.Errorf("list_ha_resources: %w", err))
+		}
+		return jsonResult(resources)
+	})
+
+	type getHAStatusInput struct{}
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_ha_status",
+		Description: "Get the current status of the HA manager, including quorum and per-node/per-resource state.",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ getHAStatusInput) (*mcp.CallToolResult, any, error) {
+		status, err := client.GetHAStatus(ctx)
+		if err != nil {
+			return errorResult(fmt.Errorf("get_ha_status: %w", err))
+		}
+		return jsonResult(status)
+	})
+
+	type listClusterConfigNodesInput struct{}
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "list_cluster_config_nodes",
+		Description: "List the corosync nodelist for the cluster (node names, IDs, and ring addresses).",
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ listClusterConfigNodesInput) (*mcp.CallToolResult, any, error) {
+		nodes, err := client.ListClusterConfigNodes(ctx)
+		if err != nil {
+			return errorResult(fmt.Errorf("list_cluster_config_nodes: %w", err))
+		}
+		return jsonResult(nodes)
+	})
 }

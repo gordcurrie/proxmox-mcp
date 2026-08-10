@@ -130,3 +130,160 @@ func TestGetClusterStatus_notFound(t *testing.T) {
 		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }
+
+func TestListHAGroups_success(t *testing.T) {
+	t.Parallel()
+
+	want := []map[string]any{
+		{"rule": "no-pve3", "type": "node-affinity", "nodes": "pve1,pve2,pve4"},
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/cluster/ha/rules" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, want))
+	}))
+	defer srv.Close()
+
+	got, err := newTestClient(t, srv.URL).ListHAGroups(context.Background())
+	if err != nil {
+		t.Fatalf("ListHAGroups: %v", err)
+	}
+	if len(got) != 1 || got[0]["rule"] != "no-pve3" {
+		t.Errorf("got %+v, want 1 rule named no-pve3", got)
+	}
+}
+
+func TestListHAGroups_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient(t, srv.URL).ListHAGroups(context.Background())
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestListHAResources_success(t *testing.T) {
+	t.Parallel()
+
+	want := []map[string]any{
+		{"sid": "ct:104", "state": "started"},
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/cluster/ha/resources" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, want))
+	}))
+	defer srv.Close()
+
+	got, err := newTestClient(t, srv.URL).ListHAResources(context.Background())
+	if err != nil {
+		t.Fatalf("ListHAResources: %v", err)
+	}
+	if len(got) != 1 || got[0]["sid"] != "ct:104" {
+		t.Errorf("got %+v, want 1 resource ct:104", got)
+	}
+}
+
+func TestListHAResources_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient(t, srv.URL).ListHAResources(context.Background())
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestGetHAStatus_success(t *testing.T) {
+	t.Parallel()
+
+	want := []map[string]any{
+		{"type": "quorum", "status": "OK"},
+		{"type": "node", "node": "pve1", "status": "online"},
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/cluster/ha/status/current" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, want))
+	}))
+	defer srv.Close()
+
+	got, err := newTestClient(t, srv.URL).GetHAStatus(context.Background())
+	if err != nil {
+		t.Fatalf("GetHAStatus: %v", err)
+	}
+	if len(got) != 2 || got[0]["type"] != "quorum" {
+		t.Errorf("got %+v, want first entry type quorum", got)
+	}
+}
+
+func TestGetHAStatus_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient(t, srv.URL).GetHAStatus(context.Background())
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestListClusterConfigNodes_success(t *testing.T) {
+	t.Parallel()
+
+	want := []map[string]any{
+		{"name": "pve1", "nodeid": float64(1), "ring0_addr": "192.168.4.101"},
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/cluster/config/nodes" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(jsonEnvelope(t, want))
+	}))
+	defer srv.Close()
+
+	got, err := newTestClient(t, srv.URL).ListClusterConfigNodes(context.Background())
+	if err != nil {
+		t.Fatalf("ListClusterConfigNodes: %v", err)
+	}
+	if len(got) != 1 || got[0]["name"] != "pve1" {
+		t.Errorf("got %+v, want 1 node named pve1", got)
+	}
+}
+
+func TestListClusterConfigNodes_notFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	_, err := newTestClient(t, srv.URL).ListClusterConfigNodes(context.Background())
+	if !errors.Is(err, ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}

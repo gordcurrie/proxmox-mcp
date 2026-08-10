@@ -61,6 +61,10 @@ type proxmoxClient interface {
 	ListClusterResources(ctx context.Context, resourceType string) ([]proxmox.ClusterResource, error)
 	GetTaskStatus(ctx context.Context, node, upid string) (*proxmox.TaskStatus, error)
 	GetClusterStatus(ctx context.Context) ([]map[string]any, error)
+	ListHAGroups(ctx context.Context) ([]map[string]any, error)
+	ListHAResources(ctx context.Context) ([]map[string]any, error)
+	GetHAStatus(ctx context.Context) ([]map[string]any, error)
+	ListClusterConfigNodes(ctx context.Context) ([]map[string]any, error)
 
 	// Snapshots
 	ListVMSnapshots(ctx context.Context, node string, vmid int) ([]proxmox.Snapshot, error)
