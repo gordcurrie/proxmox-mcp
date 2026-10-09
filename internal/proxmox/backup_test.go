@@ -61,8 +61,7 @@ func TestCreateBackup_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }

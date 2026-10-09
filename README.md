@@ -183,7 +183,7 @@ mv <binary-name> /usr/local/bin/proxmox-mcp
 
 ### Build from source
 
-Requires Go 1.26+. You will also need a Proxmox VE API token — create one in **Datacenter → Permissions → API Tokens**.
+Requires Go 1.27+. You will also need a Proxmox VE API token — create one in **Datacenter → Permissions → API Tokens**.
 
 ```bash
 git clone https://github.com/gordcurrie/proxmox-mcp

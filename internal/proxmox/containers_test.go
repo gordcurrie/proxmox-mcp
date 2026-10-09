@@ -141,8 +141,7 @@ func TestGetContainerStatus_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -155,8 +154,7 @@ func TestStartContainer_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -169,8 +167,7 @@ func TestStopContainer_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -198,8 +195,7 @@ func TestShutdownContainer_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -227,8 +223,7 @@ func TestRebootContainer_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -293,8 +288,7 @@ func TestDeleteContainer_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -343,8 +337,7 @@ func TestCreateContainer_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -384,8 +377,7 @@ func TestCloneContainer_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -461,8 +453,7 @@ func TestSetContainerConfig_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -547,8 +538,7 @@ func TestResizeContainerDisk_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -607,8 +597,7 @@ func TestMigrateContainer_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -676,8 +665,7 @@ func TestRestoreContainer_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }

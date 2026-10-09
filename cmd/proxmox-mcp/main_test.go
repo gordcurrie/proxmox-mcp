@@ -42,7 +42,7 @@ func TestNewHTTPHandlerCrossOrigin(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, "http://localhost:8080/", strings.NewReader(initializeBody))
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "http://localhost:8080/", strings.NewReader(initializeBody))
 			req.Header.Set("Content-Type", "application/json")
 			req.Header.Set("Accept", "application/json, text/event-stream")
 			for k, v := range tt.headers {
