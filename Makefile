@@ -1,10 +1,11 @@
 BINARY := bin/proxmox-mcp
 CMD     := ./cmd/proxmox-mcp
 
-GOFUMPT_VERSION      := v0.7.0
-GOSEC_VERSION        := v2.22.8
-GOVULNCHECK_VERSION  := v1.1.4
-GOLANGCILINT_VERSION := v2.10.1
+GOFUMPT_VERSION      := v0.12.0
+# TODO: switch to v2.29.1 once tagged (securego/gosec#1771)
+GOSEC_VERSION        := v2.29.1-0.20261009120814-7b1b5cebe007
+GOVULNCHECK_VERSION  := v1.8.0
+GOLANGCILINT_VERSION := v2.14.0
 
 .PHONY: all install-tools fix fmt vet lint sec vulncheck test build check clean
 

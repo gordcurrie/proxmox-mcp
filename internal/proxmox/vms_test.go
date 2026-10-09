@@ -156,8 +156,7 @@ func TestGetVMStatus_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -170,8 +169,7 @@ func TestStartVM_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -184,8 +182,7 @@ func TestStopVM_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -198,8 +195,7 @@ func TestShutdownVM_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -227,8 +223,7 @@ func TestRebootVM_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -256,8 +251,7 @@ func TestSuspendVM_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -285,8 +279,7 @@ func TestResumeVM_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -351,8 +344,7 @@ func TestDeleteVM_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -392,8 +384,7 @@ func TestCreateVM_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -433,8 +424,7 @@ func TestCloneVM_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -509,8 +499,7 @@ func TestSetVMConfig_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -595,8 +584,7 @@ func TestResizeVMDisk_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -655,8 +643,7 @@ func TestMigrateVM_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -725,8 +712,7 @@ func TestRestoreVM_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }
@@ -792,8 +778,7 @@ func TestMoveVMDisk_apiError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
+	if _, ok := errors.AsType[*APIError](err); !ok {
 		t.Errorf("expected *APIError, got %T: %v", err, err)
 	}
 }

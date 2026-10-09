@@ -42,7 +42,7 @@ func TestNewHTTPHandlerCrossOrigin(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, "http://localhost:8080/", strings.NewReader(initializeBody))
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "http://localhost:8080/", strings.NewReader(initializeBody))
 			req.Header.Set("Content-Type", "application/json")
 			req.Header.Set("Accept", "application/json, text/event-stream")
 			for k, v := range tt.headers {
@@ -54,6 +54,37 @@ func TestNewHTTPHandlerCrossOrigin(t *testing.T) {
 
 			if rec.Code != tt.wantStatus {
 				t.Errorf("status = %d, want %d; body: %s", rec.Code, tt.wantStatus, rec.Body.String())
+			}
+		})
+	}
+}
+
+func TestValidateTokenSecret(t *testing.T) {
+	const valid = "0f8b6c1e-2a4d-4e7f-9b3c-5d6e7f8a9b0c"
+
+	tests := []struct {
+		name    string
+		secret  string
+		wantErr bool
+	}{
+		{name: "canonical lowercase UUID", secret: valid},
+		{name: "token ID instead of secret", secret: "root@pam!mcp", wantErr: true}, //nolint:gosec // G101: fake token ID placeholder, not a real credential
+		{name: "truncated", secret: valid[:len(valid)-1], wantErr: true},
+		{name: "trailing newline", secret: valid + "\n", wantErr: true},
+		{name: "uppercase", secret: strings.ToUpper(valid), wantErr: true},
+		{name: "braces", secret: "{" + valid + "}", wantErr: true},
+		{name: "urn prefix", secret: "urn:uuid:" + valid, wantErr: true},
+		{name: "no hyphens", secret: strings.ReplaceAll(valid, "-", ""), wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateTokenSecret(tt.secret)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("validateTokenSecret() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if err != nil && tt.secret != "" && strings.Contains(err.Error(), tt.secret) {
+				t.Errorf("error message leaks the secret: %v", err)
 			}
 		})
 	}
