@@ -86,12 +86,9 @@ func run() error {
 			return fmt.Errorf("stdio server: %w", err)
 		}
 	case "http":
-		handler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server {
-			return server
-		}, nil)
 		httpServer := &http.Server{
 			Addr:              *addr,
-			Handler:           http.MaxBytesHandler(handler, 4<<20),
+			Handler:           newHTTPHandler(server),
 			ReadHeaderTimeout: 30 * time.Second,
 			ReadTimeout:       30 * time.Second,
 			IdleTimeout:       120 * time.Second,
@@ -114,6 +111,17 @@ func run() error {
 	}
 
 	return nil
+}
+
+// newHTTPHandler wraps server in a Streamable HTTP handler with cross-origin
+// protection and a request body limit. The MCP SDK stopped applying
+// cross-origin protection by default in v1.8.0, so it is added explicitly to
+// keep browsers on other origins from issuing requests to a local server.
+func newHTTPHandler(server *mcp.Server) http.Handler {
+	handler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server {
+		return server
+	}, nil)
+	return http.MaxBytesHandler(http.NewCrossOriginProtection().Handler(handler), 4<<20)
 }
 
 // requireEnv returns the value of the named environment variable or an error
