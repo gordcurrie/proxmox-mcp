@@ -29,6 +29,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"uuid"
 
 	"github.com/gordcurrie/proxmox-mcp/internal/proxmox"
 	"github.com/gordcurrie/proxmox-mcp/tools"
@@ -60,6 +61,9 @@ func run() error {
 	}
 	tokenSecret, err := requireEnv("PROXMOX_TOKEN_SECRET")
 	if err != nil {
+		return err
+	}
+	if err := validateTokenSecret(tokenSecret); err != nil {
 		return err
 	}
 	insecure := os.Getenv("PROXMOX_INSECURE") == "true"
@@ -122,6 +126,19 @@ func newHTTPHandler(server *mcp.Server) http.Handler {
 		return server
 	}, nil)
 	return http.MaxBytesHandler(http.NewCrossOriginProtection().Handler(handler), 4<<20)
+}
+
+// validateTokenSecret reports an error if secret is not a canonical
+// lowercase UUID, the format Proxmox issues API token secrets in. This catches
+// misconfiguration (e.g. the token ID pasted as the secret, or stray
+// whitespace) at startup instead of as a 401 on the first API call. The error
+// never includes the secret itself.
+func validateTokenSecret(secret string) error {
+	u, err := uuid.Parse(secret)
+	if err != nil || u.String() != secret {
+		return errors.New("PROXMOX_TOKEN_SECRET is not a valid token secret: expected a lowercase UUID (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)")
+	}
+	return nil
 }
 
 // requireEnv returns the value of the named environment variable or an error
