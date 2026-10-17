@@ -36,6 +36,9 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
+// version is set at build time via -ldflags "-X main.version=<tag>".
+var version = "dev"
+
 func main() {
 	if err := run(); err != nil {
 		slog.Error("fatal", "err", err)
@@ -76,7 +79,7 @@ func run() error {
 
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "proxmox-mcp",
-		Version: "v0.1.0",
+		Version: version,
 	}, nil)
 
 	tools.RegisterAll(server, client, tools.Config{AllowDestructive: allowDestructive})
