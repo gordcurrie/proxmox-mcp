@@ -253,9 +253,10 @@ claude mcp add proxmox --scope user \
   -e PROXMOX_API_URL=https://your-proxmox-host:8006/api2/json \
   -e 'PROXMOX_TOKEN_ID=user@realm!tokenid' \
   -e PROXMOX_TOKEN_SECRET=your-token-secret \
-  -e PROXMOX_INSECURE=true \
   -- /path/to/proxmox-mcp
 ```
+
+If your Proxmox host uses its default self-signed certificate, add `-e PROXMOX_INSECURE=true`. This disables TLS certificate and hostname verification, so only use it on a trusted network.
 
 Run `/mcp` inside Claude Code to confirm the server is connected.
 
