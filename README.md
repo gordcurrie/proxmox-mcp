@@ -172,6 +172,17 @@ Download the latest release for your platform from the [Releases](https://github
 | macOS (arm64) | `proxmox-mcp_darwin_arm64` |
 | Windows (amd64) | `proxmox-mcp_windows_amd64.exe` |
 
+Each release also includes `checksums.txt` with SHA-256 hashes of every binary. Download it into the same directory and verify before running:
+
+```bash
+# Linux
+sha256sum --check --ignore-missing checksums.txt
+# macOS
+shasum -a 256 --check --ignore-missing checksums.txt
+```
+
+Windows users can compare the output of `Get-FileHash proxmox-mcp_windows_amd64.exe` (PowerShell) against the matching line.
+
 Make it executable and place it on your `PATH` (substitute the filename for your platform):
 
 ```bash
@@ -180,6 +191,16 @@ mv <binary-name> /usr/local/bin/proxmox-mcp
 ```
 
 > Windows users: rename the `.exe` and add it to a directory on your `%PATH%`.
+
+> macOS users: if Gatekeeper blocks the downloaded binary, clear the quarantine flag with `xattr -d com.apple.quarantine /usr/local/bin/proxmox-mcp`.
+
+### Install with Go
+
+Requires Go 1.27.2+. Installs `proxmox-mcp` into `$(go env GOPATH)/bin`:
+
+```bash
+go install github.com/gordcurrie/proxmox-mcp/cmd/proxmox-mcp@latest
+```
 
 ### Build from source
 
@@ -224,6 +245,19 @@ set -a && source .env && set +a
 ```bash
 ./bin/proxmox-mcp --transport http --addr localhost:8080
 ```
+
+## Claude Code configuration
+
+```bash
+claude mcp add proxmox --scope user \
+  -e PROXMOX_API_URL=https://your-proxmox-host:8006/api2/json \
+  -e 'PROXMOX_TOKEN_ID=user@realm!tokenid' \
+  -e PROXMOX_TOKEN_SECRET=your-token-secret \
+  -e PROXMOX_INSECURE=true \
+  -- /path/to/proxmox-mcp
+```
+
+Run `/mcp` inside Claude Code to confirm the server is connected.
 
 ## VS Code Copilot configuration
 
