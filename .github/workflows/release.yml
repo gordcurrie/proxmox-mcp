@@ -24,9 +24,9 @@ jobs:
             goarch: amd64
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           cache: true
@@ -36,16 +36,17 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: "0"
+          VERSION: ${{ github.ref_name }}
         run: |
           EXT=""
           if [ "$GOOS" = "windows" ]; then EXT=".exe"; fi
           mkdir -p dist
-          go build -trimpath -ldflags="-s -w" \
+          go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" \
             -o "dist/proxmox-mcp_${GOOS}_${GOARCH}${EXT}" \
             ./cmd/proxmox-mcp
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: proxmox-mcp_${{ matrix.goos }}_${{ matrix.goarch }}
           path: dist/proxmox-mcp_${{ matrix.goos }}_${{ matrix.goarch }}*
@@ -60,13 +61,17 @@ jobs:
 
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           path: dist/
           merge-multiple: true
 
+      - name: Generate checksums
+        working-directory: dist
+        run: sha256sum proxmox-mcp_* > checksums.txt
+
       - name: Create release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/*
           generate_release_notes: true
