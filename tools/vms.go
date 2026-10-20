@@ -235,7 +235,7 @@ func registerVMTools(s *mcp.Server, client proxmoxClient) {
 		Node   string `json:"node"             jsonschema:"source node the VM is currently on"`
 		VMID   int    `json:"vmid"             jsonschema:"numeric VM ID"`
 		Target string `json:"target"           jsonschema:"destination node name"`
-		Online bool   `json:"online,omitempty" jsonschema:"true for live migration (no guest downtime when QEMU guest agent is running)"`
+		Online bool   `json:"online,omitempty" jsonschema:"true for live migration (the VM keeps running, with a brief pause at switchover)"`
 	}
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "migrate_vm",

@@ -10,7 +10,7 @@
 // Optional environment variables:
 //
 //	PROXMOX_INSECURE          Set to "true" to skip TLS certificate verification
-//	PROXMOX_ALLOW_DESTRUCTIVE Set to "true" to enable delete_vm and delete_container tools
+//	PROXMOX_ALLOW_DESTRUCTIVE Set to "true" to enable destructive tools (deletes, node reboot/shutdown)
 //
 // Flags:
 //

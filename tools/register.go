@@ -7,7 +7,7 @@ import (
 
 // Config holds optional feature flags for tool registration.
 type Config struct {
-	// AllowDestructive enables destructive tools (delete_vm, delete_container).
+	// AllowDestructive enables destructive tools (see registerDestructiveTools).
 	// Corresponds to the PROXMOX_ALLOW_DESTRUCTIVE environment variable.
 	// Defaults to false — destructive tools are not registered unless explicitly opted in.
 	AllowDestructive bool

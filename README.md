@@ -104,9 +104,9 @@ An [MCP](https://modelcontextprotocol.io) server that exposes [Proxmox VE](https
 | `get_vm_firewall_options` | Get firewall policy options for a QEMU VM | `node`, `vmid` |
 | `list_container_firewall_rules` | List all firewall rules for an LXC container | `node`, `vmid` |
 | `get_container_firewall_options` | Get firewall policy options for an LXC container | `node`, `vmid` |
-| `add_vm_firewall_rule` | Add a firewall rule to a QEMU VM | `node`, `vmid`, `type` (`in`\|`out`), `action` (`ACCEPT`\|`DROP`\|`REJECT`), `proto` (optional), `dport` (optional), `sport` (optional), `source` (optional), `dest` (optional), `iface` (optional), `comment` (optional), `enable` (optional) |
+| `add_vm_firewall_rule` | Add a firewall rule to a QEMU VM | `node`, `vmid`, `type` (`in`\|`out`), `action` (`ACCEPT`\|`DROP`\|`REJECT`), `proto` (optional), `dport` (optional), `sport` (optional), `source` (optional), `dest` (optional), `iface` (optional), `comment` (optional), `enable` (optional, default `true`) |
 | `delete_vm_firewall_rule` | Delete a firewall rule from a QEMU VM by position | `node`, `vmid`, `pos` (zero-based) |
-| `add_container_firewall_rule` | Add a firewall rule to an LXC container | `node`, `vmid`, `type`, `action`, `proto` (optional), `dport` (optional), `sport` (optional), `source` (optional), `dest` (optional), `iface` (optional), `comment` (optional), `enable` (optional) |
+| `add_container_firewall_rule` | Add a firewall rule to an LXC container | `node`, `vmid`, `type`, `action`, `proto` (optional), `dport` (optional), `sport` (optional), `source` (optional), `dest` (optional), `iface` (optional), `comment` (optional), `enable` (optional, default `true`) |
 | `delete_container_firewall_rule` | Delete a firewall rule from an LXC container by position | `node`, `vmid`, `pos` (zero-based) |
 
 ### Pool Management
@@ -224,7 +224,7 @@ All configuration is via environment variables:
 | `PROXMOX_TOKEN_ID` | yes | e.g. `root@pam!mcp` |
 | `PROXMOX_TOKEN_SECRET` | yes | Token UUID secret |
 | `PROXMOX_INSECURE` | no | `true` to skip TLS verification (self-signed certs) |
-| `PROXMOX_ALLOW_DESTRUCTIVE` | no | `true` to register `delete_vm`, `delete_container`, `delete_storage_content`, `reboot_node`, `shutdown_node`, and `delete_pool` tools (default: disabled) |
+| `PROXMOX_ALLOW_DESTRUCTIVE` | no | `true` to register the [destructive tools](#destructive-opt-in): `delete_vm`, `delete_container`, `delete_storage_content`, `remove_storage`, `delete_pool`, `delete_node_network_interface`, `reboot_node`, and `shutdown_node` (default: disabled) |
 
 Source your `.env` file before running:
 
@@ -258,7 +258,7 @@ claude mcp add proxmox --scope user \
 
 If your Proxmox host uses its default self-signed certificate, add `-e PROXMOX_INSECURE=true`. This disables TLS certificate and hostname verification, so only use it on a trusted network.
 
-Run `/mcp` inside Claude Code to confirm the server is connected.
+Run `/mcp` inside Claude Code to confirm the server is connected. Install the [agent skills](#agent-skills) too, so Claude knows when and how to use the tools.
 
 ## VS Code Copilot configuration
 
@@ -324,6 +324,29 @@ Add the server to `opencode.json` in your project root (or `~/.config/opencode/o
   }
 }
 ```
+
+## Agent skills
+
+The [`skills/`](skills/) directory contains [Agent Skills](https://agentskills.io) (`SKILL.md` format) that teach an agent how to use these tools well:
+
+| Skill | Use it for |
+|---|---|
+| [`proxmox`](skills/proxmox/SKILL.md) | Everyday tasks: cluster health, VM and container lifecycle, snapshots, backups and restores, migration, storage, pools, firewall, node networking — with safe confirmation rules |
+| [`audit-proxmox`](skills/audit-proxmox/SKILL.md) | A read-only health and security audit (quorum, SMART, ZFS, HA, backup coverage, firewall, users and tokens) that produces a prioritised findings report |
+
+Inside this repo they are already available to Claude Code and Copilot via `.claude/skills` and `.github/skills`, which link to `skills/`.
+
+To use them in all your projects with Claude Code, symlink each skill into your user skills directory, so a `git pull` keeps them current:
+
+```bash
+git clone https://github.com/gordcurrie/proxmox-mcp
+mkdir -p ~/.claude/skills
+for s in "$PWD"/proxmox-mcp/skills/*/; do ln -s "${s%/}" ~/.claude/skills/; done
+```
+
+If you install them globally, Claude Code sees each skill twice while you work inside this repo (once from `~/.claude/skills`, once from `.claude/skills`); both point at the same files, so they never disagree. Other agents that support Agent Skills (GitHub Copilot, Cursor, Codex CLI, Gemini CLI, …) read the same folder layout; link or copy the skills into that agent's skills directory.
+
+On Windows, clone with symlinks enabled (`git clone -c core.symlinks=true …`, which needs Developer Mode or admin rights); otherwise `.claude/skills` and `.github/skills` are checked out as plain text files and the in-repo skills do not load. Copy `skills/*` into your agent's skills directory instead.
 
 ## Development
 

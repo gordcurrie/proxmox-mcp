@@ -19,7 +19,7 @@ func registerBackupTools(s *mcp.Server, client proxmoxClient) {
 	}
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "create_backup",
-		Description: "Create a backup of a QEMU VM or LXC container via vzdump. Returns the async task ID — use get_task_status to poll for completion. mode defaults to snapshot (no guest downtime when QEMU guest agent is running). compress defaults to zstd.",
+		Description: "Create a backup of a QEMU VM or LXC container via vzdump. Returns the async task ID — use get_task_status to poll for completion. mode defaults to snapshot: an online backup, though guest I/O may pause briefly (containers are briefly suspended; VMs with the QEMU guest agent freeze filesystems). compress defaults to zstd.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input createBackupInput) (*mcp.CallToolResult, any, error) {
 		req := &proxmox.CreateBackupRequest{
 			VMID:     input.VMID,
