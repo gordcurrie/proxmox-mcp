@@ -236,8 +236,10 @@ when the datacenter firewall is enabled **and** the guest firewall is enabled
 - Guest firewall enabled with rules, but the datacenter firewall disabled —
   `[MEDIUM]`; the rules look protective but do nothing
 - Guest `policy_in: ACCEPT` with the firewall enabled — `[MEDIUM]`
-- An `in` rule with `action: ACCEPT`, no `source` and a management port
-  (`22`, `8006`, `3128`, `5900:5999`) — `[HIGH]`
+- An **enabled** (`enable: 1`) `in` rule with `action: ACCEPT`, no `source`
+  and a management port (`22`, `8006`, `3128`, `5900:5999`), at a level where
+  the firewall is enforced (see above) — `[HIGH]`. A disabled rule cannot
+  match traffic: report it only under the disabled-rules check below.
 - An `in` rule with `sport` set to the service port (for example `sport: 22`
   next to `dport: 22`) — `[MEDIUM]`; client source ports are ephemeral, so
   the rule almost never matches and the traffic falls through to the policy

@@ -18,6 +18,7 @@ linting via `golangci-lint`/`gosec`/`govulncheck`.
 | Access Control & Audit Tools | ✅ Complete — 83 tools: `list_users`, `list_user_tokens`, `get_node_journal` (PR #34) |
 | Disk Health Tools | ✅ Complete — 86 tools: `get_disk_smart`, `list_zfs_pools`, `get_zfs_pool` (PR #35) |
 | HA & Cluster Config Tools | ✅ Complete — 90 tools: `list_ha_groups`, `list_ha_resources`, `get_ha_status`, `list_cluster_config_nodes` (PR #36) |
+| Agent Skills & Firewall Default Fix | ✅ Complete — 90 tools (no new tools): `proxmox` and `audit-proxmox` skills in `skills/`; `add_vm_firewall_rule` / `add_container_firewall_rule` now enable rules by default (PR #41) |
 
 ## Decisions
 
