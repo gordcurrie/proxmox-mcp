@@ -191,10 +191,11 @@ afterwards.
   `enable: 1`) **and** the guest NIC has `firewall=1`. Missing keys in the
   options response mean the Proxmox default (disabled; `policy_in` `DROP`,
   `policy_out` `ACCEPT`).
-- `add_vm_firewall_rule` / `add_container_firewall_rule` — always pass
-  `enable: true`. If `enable` is omitted, Proxmox saves the rule
-  **disabled** (`enable: 0`), despite what the tool description says. After
-  adding, re-list the rules and confirm the new rule shows `enable: 1`. Do not report a rule as active until you have checked. `type`
+- `add_vm_firewall_rule` / `add_container_firewall_rule` — pass
+  `enable: true` explicitly. Current proxmox-mcp versions enable a rule when
+  `enable` is omitted, but older versions sent nothing and Proxmox then saved
+  the rule **disabled** (`enable: 0`). After adding, re-list the rules and
+  confirm the new rule shows `enable: 1`. Do not report a rule as active until you have checked. `type`
   is `in` or `out`; `action` is `ACCEPT`, `DROP` or `REJECT`. The rule is
   saved immediately (no task), but it is only enforced when the firewall is
   enabled at every level (see above).

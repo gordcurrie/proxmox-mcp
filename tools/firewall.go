@@ -110,12 +110,12 @@ func registerFirewallTools(s *mcp.Server, client proxmoxClient) {
 		Dest    string `json:"dest,omitempty"    jsonschema:"destination IP/CIDR/IPSet/alias (out-rules)"`
 		IFace   string `json:"iface,omitempty"   jsonschema:"restrict rule to this network interface name"`
 		Comment string `json:"comment,omitempty" jsonschema:"human-readable description of the rule"`
-		Enable  bool   `json:"enable,omitempty"  jsonschema:"set to true to explicitly mark the rule as enabled (default: Proxmox enables rules automatically)"`
+		Enable  *bool  `json:"enable,omitempty"  jsonschema:"whether the rule is enabled (default true); set false to add the rule disabled"`
 	}
 
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "add_vm_firewall_rule",
-		Description: "Add a firewall rule to a specific QEMU VM. The rule takes effect immediately — no task UPID is returned.",
+		Description: "Add a firewall rule to a specific QEMU VM. The rule is enabled unless enable=false and is saved immediately — no task UPID is returned. It is only enforced when the firewall is enabled at the datacenter and guest level.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input addVMFirewallRuleInput) (*mcp.CallToolResult, any, error) {
 		req := &proxmox.FirewallRuleRequest{
 			Type:    input.Type,
@@ -127,10 +127,7 @@ func registerFirewallTools(s *mcp.Server, client proxmoxClient) {
 			Dest:    input.Dest,
 			IFace:   input.IFace,
 			Comment: input.Comment,
-		}
-		if input.Enable {
-			v := 1
-			req.Enable = &v
+			Enable:  ruleEnable(input.Enable),
 		}
 		if err := client.AddVMFirewallRule(ctx, input.Node, input.VMID, req); err != nil {
 			return errorResult(fmt.Errorf("add_vm_firewall_rule: %w", err))
@@ -166,12 +163,12 @@ func registerFirewallTools(s *mcp.Server, client proxmoxClient) {
 		Dest    string `json:"dest,omitempty"    jsonschema:"destination IP/CIDR/IPSet/alias (out-rules)"`
 		IFace   string `json:"iface,omitempty"   jsonschema:"restrict rule to this network interface name"`
 		Comment string `json:"comment,omitempty" jsonschema:"human-readable description of the rule"`
-		Enable  bool   `json:"enable,omitempty"  jsonschema:"set to true to explicitly mark the rule as enabled (default: Proxmox enables rules automatically)"`
+		Enable  *bool  `json:"enable,omitempty"  jsonschema:"whether the rule is enabled (default true); set false to add the rule disabled"`
 	}
 
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "add_container_firewall_rule",
-		Description: "Add a firewall rule to a specific LXC container. The rule takes effect immediately — no task UPID is returned.",
+		Description: "Add a firewall rule to a specific LXC container. The rule is enabled unless enable=false and is saved immediately — no task UPID is returned. It is only enforced when the firewall is enabled at the datacenter and guest level.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input addCTFirewallRuleInput) (*mcp.CallToolResult, any, error) {
 		req := &proxmox.FirewallRuleRequest{
 			Type:    input.Type,
@@ -183,10 +180,7 @@ func registerFirewallTools(s *mcp.Server, client proxmoxClient) {
 			Dest:    input.Dest,
 			IFace:   input.IFace,
 			Comment: input.Comment,
-		}
-		if input.Enable {
-			v := 1
-			req.Enable = &v
+			Enable:  ruleEnable(input.Enable),
 		}
 		if err := client.AddContainerFirewallRule(ctx, input.Node, input.VMID, req); err != nil {
 			return errorResult(fmt.Errorf("add_container_firewall_rule: %w", err))
@@ -209,4 +203,15 @@ func registerFirewallTools(s *mcp.Server, client proxmoxClient) {
 		}
 		return textResult("firewall rule deleted from container")
 	})
+}
+
+// ruleEnable maps the optional enable tool input to the Proxmox enable flag.
+// Proxmox stores a rule created without enable as disabled, so an omitted
+// value defaults to enabled.
+func ruleEnable(enable *bool) *int {
+	v := 1
+	if enable != nil && !*enable {
+		v = 0
+	}
+	return &v
 }

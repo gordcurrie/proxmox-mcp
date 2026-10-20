@@ -302,7 +302,7 @@ type MoveVMDiskRequest struct {
 type FirewallRuleRequest struct {
 	Type    string `json:"type"`              // "in" or "out"
 	Action  string `json:"action"`            // "ACCEPT", "DROP", "REJECT", or a security-group name
-	Enable  *int   `json:"enable,omitempty"`  // 1 = enabled, 0 = disabled; nil = omit (Proxmox defaults to enabled)
+	Enable  *int   `json:"enable,omitempty"`  // 1 = enabled, 0 = disabled; nil = omit (Proxmox then stores the rule disabled)
 	IFace   string `json:"iface,omitempty"`   // restrict rule to this network interface name
 	Source  string `json:"source,omitempty"`  // source IP/CIDR/IPSet/alias (in-rules only)
 	Dest    string `json:"dest,omitempty"`    // destination IP/CIDR/IPSet/alias (out-rules only)
