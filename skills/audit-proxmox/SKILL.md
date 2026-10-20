@@ -28,8 +28,10 @@ Confirm the proxmox-mcp server is configured and these tools are available:
 `get_node_disks`, `get_disk_smart`, `list_zfs_pools`, `get_zfs_pool`,
 `list_storages`, `list_node_storage`, `get_ha_status`, `list_ha_resources`,
 `list_backups`, `list_vm_snapshots`, `list_container_snapshots`,
+`list_ha_groups`, `get_vm_config`, `get_container_config`,
 `get_cluster_firewall_options`, `list_cluster_firewall_rules`,
-`get_vm_firewall_options`, `get_container_firewall_options`, `list_users`,
+`get_vm_firewall_options`, `get_container_firewall_options`,
+`list_vm_firewall_rules`, `list_container_firewall_rules`, `list_users`,
 `list_user_tokens`, `get_node_journal`, `list_node_tasks`.
 
 This audit is **read-only**. Do not call any tool that changes state during
@@ -37,7 +39,8 @@ the audit, even to fix a finding. List remediations in the report and let the
 user decide what to act on afterwards (the `proxmox` skill covers how).
 
 proxmox-mcp list tools return the full result in one call; there is no
-pagination. Timestamps (`ctime`, `snaptime`, `starttime`, `expire`) are Unix
+pagination. The exception is `list_node_tasks`: without a `limit`, Proxmox
+returns only its default (50 tasks), so always pass one. Timestamps (`ctime`, `snaptime`, `starttime`, `expire`) are Unix
 seconds; convert them to dates in the report.
 
 ---
@@ -49,8 +52,12 @@ seconds; convert them to dates in the report.
 2. `list_nodes` for `status`, `cpu`, `mem` / `maxmem`, `disk` / `maxdisk` and
    `uptime` per node.
 
+If there is no `type: "cluster"` entry, this is a standalone host, not a
+cluster. Record `[INFO] Standalone host` and skip the quorum findings here and
+all of Section 6. Do not treat the missing `quorate` key as a failure.
+
 **Findings to raise:**
-- `[CRITICAL]` Cluster not quorate (`quorate: 0`)
+- `[CRITICAL]` Cluster not quorate (`quorate: 0` on the `type: "cluster"` entry)
 - `[HIGH]` Any node with `online: 0` or `status` other than `online`
 - `[MEDIUM]` A cluster with exactly 2 nodes and no QDevice — losing either node
   loses quorum (ask the user whether a QDevice exists; it is not visible here)
@@ -152,8 +159,10 @@ Call `get_node_status` for **every** node.
 - Any service in `error`, `fence` or `recovery` state — `[HIGH]`
 - A service whose `state` differs from its `request_state` for more than a few
   minutes — `[MEDIUM]`
-- HA resources defined but no `master` entry, or `fencing` not armed —
-  `[HIGH]`
+- At least one service with `request_state: started`, but no `master` entry
+  or the `fencing` entry not armed — `[HIGH]`. When no HA service is meant to
+  be running (none defined, or all `stopped` / `ignored` / `disabled`), idle
+  LRMs and disarmed fencing are normal; do not flag them.
 - HA-managed guests that use only node-local storage (they cannot be
   recovered on another node) — `[MEDIUM]`; check with `get_vm_config` /
   `get_container_config`
@@ -179,8 +188,8 @@ Call `get_node_status` for **every** node.
   30 days — `[HIGH]`
 - A guest with only one backup (no retention history) — `[LOW]`
 - Recent `vzdump` tasks that failed: `list_node_tasks` on each node (for
-  example `limit: 200`), entries with `type: "vzdump"` and `status` other than
-  `OK` — `[HIGH]`
+  example `limit: 500`; never omit it), entries with `type: "vzdump"` and
+  `status` other than `OK` — `[HIGH]`
 
 Backup job schedules are not exposed by proxmox-mcp; judge coverage from the
 backups that actually exist.
@@ -232,7 +241,7 @@ when the datacenter firewall is enabled **and** the guest firewall is enabled
 
 ## Section 10 — Users and API tokens
 
-1. `list_users`. Note `userid`, `realm-type`, `enable`, `expire` and `keys`.
+1. `list_users`. Note `userid`, `realm-type`, `enable` and `expire`.
 2. `list_user_tokens` for **every** user. Note `tokenid`, `comment`,
    `expire` and `privsep`.
 
@@ -240,9 +249,9 @@ when the datacenter firewall is enabled **and** the guest firewall is enabled
 - Users the owner does not recognise — `[HIGH]`
 - Enabled users with an `expire` date in the past, or disabled users that
   still have tokens — `[LOW]`
-- `root@pam` or other admin users without two-factor authentication — `[MEDIUM]`.
-  A non-empty `keys` field (often redacted as `x`) suggests TFA is configured;
-  confirm in the web UI before reporting.
+- Two-factor authentication cannot be checked reliably through these tools
+  (the `keys` field does not reflect every TFA type). Do not raise a TFA
+  finding from API data; list it under manual review instead.
 - Tokens with `privsep: 0` — the token has the user's **full** privileges.
   `[HIGH]` for tokens on `root@pam`; `[MEDIUM]` for other users. Recommend
   privilege-separated tokens with a minimal role.
@@ -323,6 +332,7 @@ After completing all sections, produce a report in this format:
 ## Items requiring manual review
 - [ ] Backup job schedules and retention
 - [ ] Permissions and roles
+- [ ] Two-factor authentication for `root@pam` and other admin users
 - [ ] Pending updates on each node
 - [ ] PBS verify and prune jobs
 ```

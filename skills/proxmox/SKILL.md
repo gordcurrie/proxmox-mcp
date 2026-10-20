@@ -68,9 +68,10 @@ role and whether it uses privilege separation).
    with the `node` named in the UPID (`UPID:<node>:...`) until `status` is
    `stopped`, then check `exitstatus`: `OK` means success, anything else is the
    error message. Do not report success before that.
-7. **No pagination.** proxmox-mcp list tools return the full result in one
-   call. `list_node_tasks` is the only one with a `limit`; `0` or omitted
-   means no limit.
+7. **No pagination, but mind the task limit.** proxmox-mcp list tools return
+   the full result in one call, except `list_node_tasks`: with `limit` `0` or
+   omitted, Proxmox applies its own default (50 tasks). Pass an explicit
+   `limit` (for example `500`) when looking further back.
 
 ---
 
@@ -79,7 +80,9 @@ role and whether it uses privilege separation).
 ### Is my cluster healthy?
 
 1. `get_cluster_status` — the `type: "cluster"` entry has `quorate` (`1` =
-   quorate) and `nodes`; each `type: "node"` entry has `online` and `ip`.
+   quorate) and `nodes`; each `type: "node"` entry has `online` and `ip`. A
+   standalone host (not in a cluster) returns no `type: "cluster"` entry: that
+   is normal, not a quorum failure. Skip quorum and HA checks there.
 2. `list_nodes` — per-node `status`, `cpu` (fraction 0–1), `mem` / `maxmem`,
    `disk` / `maxdisk` (bytes) and `uptime` (seconds).
 3. `get_node_status` on a node for `loadavg`, `memory`, `swap`, `rootfs`,
@@ -188,9 +191,13 @@ afterwards.
   `enable: 1`) **and** the guest NIC has `firewall=1`. Missing keys in the
   options response mean the Proxmox default (disabled; `policy_in` `DROP`,
   `policy_out` `ACCEPT`).
-- `add_vm_firewall_rule` / `add_container_firewall_rule` take effect
-  immediately. `type` is `in` or `out`; `action` is `ACCEPT`, `DROP` or
-  `REJECT`.
+- `add_vm_firewall_rule` / `add_container_firewall_rule` — always pass
+  `enable: true`. If `enable` is omitted, Proxmox saves the rule
+  **disabled** (`enable: 0`), despite what the tool description says. After
+  adding, re-list the rules and confirm the new rule shows `enable: 1`. Do not report a rule as active until you have checked. `type`
+  is `in` or `out`; `action` is `ACCEPT`, `DROP` or `REJECT`. The rule is
+  saved immediately (no task), but it is only enforced when the firewall is
+  enabled at every level (see above).
 - `delete_vm_firewall_rule` / `delete_container_firewall_rule` take a
   zero-based `pos`. Positions shift after every delete: re-list the rules
   before each delete and confirm the rule's content, not just its number.
@@ -227,6 +234,11 @@ delete, or reboot every guest to approximate a node reboot).
 
 `reboot_node` and `shutdown_node` take down every guest on that node that is
 not migrated away first, and may drop the connection this server uses.
+
+`delete_node_network_interface` only stages the removal, like the other
+network writes. Nothing changes until `apply_node_network_changes`, which
+applies **every** staged change on that node at once. Show the full staged set
+and get a separate approval before applying (see Node networking).
 
 ---
 

@@ -334,15 +334,19 @@ The [`skills/`](skills/) directory contains [Agent Skills](https://agentskills.i
 | [`proxmox`](skills/proxmox/SKILL.md) | Everyday tasks: cluster health, VM and container lifecycle, snapshots, backups and restores, migration, storage, pools, firewall, node networking — with safe confirmation rules |
 | [`audit-proxmox`](skills/audit-proxmox/SKILL.md) | A read-only health and security audit (quorum, SMART, ZFS, HA, backup coverage, firewall, users and tokens) that produces a prioritised findings report |
 
-Install them for all your projects in Claude Code:
+Inside this repo they are already available to Claude Code and Copilot via `.claude/skills` and `.github/skills`, which link to `skills/`.
+
+To use them in all your projects with Claude Code, symlink each skill into your user skills directory, so a `git pull` keeps them current:
 
 ```bash
 git clone https://github.com/gordcurrie/proxmox-mcp
 mkdir -p ~/.claude/skills
-cp -R proxmox-mcp/skills/* ~/.claude/skills/
+for s in "$PWD"/proxmox-mcp/skills/*/; do ln -s "${s%/}" ~/.claude/skills/; done
 ```
 
-Other agents that support Agent Skills (GitHub Copilot, Cursor, Codex CLI, Gemini CLI, …) read the same folders; copy them to that agent's skills directory. Inside this repo they are already available to Claude Code and Copilot via `.claude/skills` and `.github/skills`, which link to `skills/`.
+If you install them globally, Claude Code sees each skill twice while you work inside this repo (once from `~/.claude/skills`, once from `.claude/skills`); both point at the same files, so they never disagree. Other agents that support Agent Skills (GitHub Copilot, Cursor, Codex CLI, Gemini CLI, …) read the same folder layout; link or copy the skills into that agent's skills directory.
+
+On Windows, clone with symlinks enabled (`git clone -c core.symlinks=true …`, which needs Developer Mode or admin rights); otherwise `.claude/skills` and `.github/skills` are checked out as plain text files and the in-repo skills do not load. Copy `skills/*` into your agent's skills directory instead.
 
 ## Development
 
