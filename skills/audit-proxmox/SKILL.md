@@ -95,7 +95,10 @@ Call `get_node_status` for **every** node.
    disks that look healthy in step 1.
 
 **Check for:**
-- `health` other than `PASSED` / `OK` — `[CRITICAL]`
+- `health` `FAILED` (or any other explicit failing result) — `[CRITICAL]`
+- `health` `UNKNOWN`, empty, or SMART data unavailable (for example behind a
+  RAID controller that hides it) — not a disk failure. Record it as an
+  incomplete check under manual review, naming the node and disk.
 - `wearout` (percent of life **remaining**; `100` = new, `N/A` = unknown)
   below 10 — `[HIGH]`; below 30 — `[MEDIUM]`
 - Non-zero raw values for `Reallocated_Sector_Ct`, `Reported_Uncorrect`,
@@ -120,7 +123,10 @@ Call `get_node_status` for **every** node.
 **Check for:**
 - Pool `health` / `state` `DEGRADED`, `FAULTED` or `UNAVAIL` — `[CRITICAL]`
 - Any vdev or disk not `ONLINE`, or non-zero `read` / `write` / `cksum` —
-  `[HIGH]`
+  `[HIGH]`. Hot spares are the exception: an unused spare reports `AVAIL`,
+  which is healthy and not a finding. A spare in `INUSE` means it has
+  replaced a failed disk — `[MEDIUM]`; replace the failed disk so the spare
+  is freed.
 - `errors` other than `No known data errors` — `[HIGH]`
 - `alloc / size` above 80 % — `[MEDIUM]`; above 90 % — `[HIGH]` (ZFS
   performance drops sharply when nearly full)
@@ -348,6 +354,7 @@ After completing all sections, produce a report in this format:
 - [ ] Backup job schedules and retention
 - [ ] Permissions and roles
 - [ ] Two-factor authentication for `root@pam` and other admin users
+- [ ] Disks whose SMART health was `UNKNOWN` or unavailable
 - [ ] Storage replication for HA guests on node-local storage
 - [ ] Pending updates on each node
 - [ ] PBS verify and prune jobs
