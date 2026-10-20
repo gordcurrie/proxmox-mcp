@@ -27,8 +27,14 @@ stop and point the user at the setup section of the
 [README](https://github.com/gordcurrie/proxmox-mcp#installation). Do not try to
 reach the Proxmox API directly with curl unless the user asks you to.
 
-If a call fails with a TLS or certificate error, the host is most likely using
-its default self-signed certificate: the user needs `PROXMOX_INSECURE=true`. If
+If a call fails with a TLS or certificate error, do not jump to disabling
+verification: the cause may be the host's default self-signed certificate, but
+also an expired certificate, a hostname mismatch, or interception. Tell the
+user the exact error and suggest fixing trust first (install a trusted or ACME
+certificate, or add the host's CA to the system trust store).
+`PROXMOX_INSECURE=true` turns off certificate and hostname checks while the
+API token is sent; mention it only as an explicit exception for a host the
+user has verified, on a trusted network, and say that risk plainly. If
 it fails with `401`, the API token ID or secret is wrong or was revoked. A
 `403` means the token lacks the permission for that call (check the token's
 role and whether it uses privilege separation).
@@ -70,8 +76,10 @@ role and whether it uses privilege separation).
    error message. Do not report success before that.
 7. **No pagination, but mind the task limit.** proxmox-mcp list tools return
    the full result in one call, except `list_node_tasks`: with `limit` `0` or
-   omitted, Proxmox applies its own default (50 tasks). Pass an explicit
-   `limit` (for example `500`) when looking further back.
+   omitted, Proxmox applies its own default (50 tasks). There is no offset,
+   so older tasks cannot be paged through. Pass an explicit `limit` (for
+   example `500`), and if you get back exactly `limit` tasks, say the history
+   you checked may be incomplete.
 
 ---
 
@@ -153,8 +161,11 @@ afterwards.
 - `list_backups` returns `volid`, `vmid`, `ctime` (Unix time), `size` and
   `format`. To answer "when did X last back up", take the highest `ctime` for
   that `vmid`.
-- `create_backup` — `mode` defaults to `snapshot` (no downtime); `suspend` and
-  `stop` pause or stop the guest. Poll the task.
+- `create_backup` — `mode` defaults to `snapshot`, an online backup: the guest
+  keeps running, but I/O may pause briefly (containers are briefly suspended
+  while the storage snapshot is taken; VMs with the guest agent freeze their
+  filesystems). `suspend` and `stop` pause or stop the guest for longer. Poll
+  the task.
 - `restore_vm` / `restore_container` take the `archive` volid from
   `list_backups`. They will not overwrite an existing guest: the `vmid` must be
   free. To restore into an existing VMID the user must delete the guest first

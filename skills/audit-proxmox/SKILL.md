@@ -39,9 +39,12 @@ the audit, even to fix a finding. List remediations in the report and let the
 user decide what to act on afterwards (the `proxmox` skill covers how).
 
 proxmox-mcp list tools return the full result in one call; there is no
-pagination. The exception is `list_node_tasks`: without a `limit`, Proxmox
-returns only its default (50 tasks), so always pass one. Timestamps (`ctime`, `snaptime`, `starttime`, `expire`) are Unix
-seconds; convert them to dates in the report.
+pagination. The exceptions are `list_node_tasks` (without a `limit`,
+Proxmox returns only its default of 50 tasks, and there is no offset) and
+`get_node_journal` (capped output). Always pass explicit limits, and when a
+result may be cut short, say in the report that coverage is incomplete. Never
+present a partial search as complete. Timestamps (`ctime`, `snaptime`,
+`starttime`, `expire`) are Unix seconds; convert them to dates in the report.
 
 ---
 
@@ -163,9 +166,12 @@ Call `get_node_status` for **every** node.
   or the `fencing` entry not armed — `[HIGH]`. When no HA service is meant to
   be running (none defined, or all `stopped` / `ignored` / `disabled`), idle
   LRMs and disarmed fencing are normal; do not flag them.
-- HA-managed guests that use only node-local storage (they cannot be
-  recovered on another node) — `[MEDIUM]`; check with `get_vm_config` /
-  `get_container_config`
+- HA-managed guests whose disks are only on node-local storage — `[INFO]`
+  with a manual-review item. Check disks with `get_vm_config` /
+  `get_container_config`. This is a supported setup when the local storage is
+  ZFS replicated to the other HA nodes, but proxmox-mcp cannot see
+  replication jobs. Raise it as `[MEDIUM]` only if the user confirms there is
+  no replication for that guest.
 - `[INFO]` Which guests are HA-managed and which are not
 
 ---
@@ -263,10 +269,17 @@ when the datacenter firewall is enabled **and** the guest firewall is enabled
 
 ## Section 11 — Authentication activity
 
-Call `get_node_journal` on every node with `since` set to 7 days ago (Unix
-time). If the output is very large, use `last_entries` (for example `2000`)
-instead. The result is an array of syslog-style lines; the first and last
-entries are journal cursors (`s=...`), not log lines.
+Call `get_node_journal` on every node for the last 7 days, one day at a
+time: set `since` and `until` (Unix time) to each 24-hour window and pass an
+explicit `last_entries` (for example `5000`). The result is an array of
+syslog-style lines; the first and last entries are journal cursors (`s=...`),
+not log lines.
+
+The journal endpoint caps its output, so a window can come back cut short. If
+the earliest log line in a window is well after its `since`, or the window
+returns `last_entries` lines, split it into smaller windows and call again. If
+you still cannot cover a window, say in the report which node and time range
+were not fully checked.
 
 **Check for:**
 - `Failed password`, `Invalid user` or `authentication failure` from `sshd`,
@@ -333,6 +346,7 @@ After completing all sections, produce a report in this format:
 - [ ] Backup job schedules and retention
 - [ ] Permissions and roles
 - [ ] Two-factor authentication for `root@pam` and other admin users
+- [ ] Storage replication for HA guests on node-local storage
 - [ ] Pending updates on each node
 - [ ] PBS verify and prune jobs
 ```
