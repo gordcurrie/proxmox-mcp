@@ -196,7 +196,7 @@ mv <binary-name> /usr/local/bin/proxmox-mcp
 
 ### Install with Go
 
-Requires Go 1.27.2+. Installs `proxmox-mcp` into `$(go env GOPATH)/bin`:
+Requires Go 1.27.3+. Installs `proxmox-mcp` into `$(go env GOPATH)/bin`:
 
 ```bash
 go install github.com/gordcurrie/proxmox-mcp/cmd/proxmox-mcp@latest
@@ -204,7 +204,7 @@ go install github.com/gordcurrie/proxmox-mcp/cmd/proxmox-mcp@latest
 
 ### Build from source
 
-Requires Go 1.27.2+. You will also need a Proxmox VE API token — create one in **Datacenter → Permissions → API Tokens**.
+Requires Go 1.27.3+. You will also need a Proxmox VE API token — create one in **Datacenter → Permissions → API Tokens**.
 
 ```bash
 git clone https://github.com/gordcurrie/proxmox-mcp
