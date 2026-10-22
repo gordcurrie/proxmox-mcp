@@ -194,6 +194,12 @@ mv <binary-name> /usr/local/bin/proxmox-mcp
 
 > macOS users: if Gatekeeper blocks the downloaded binary, clear the quarantine flag with `xattr -d com.apple.quarantine /usr/local/bin/proxmox-mcp`.
 
+Confirm the installed version:
+
+```bash
+proxmox-mcp --version
+```
+
 ### Install with Go
 
 Requires Go 1.27.3+. Installs `proxmox-mcp` into `$(go env GOPATH)/bin`:
